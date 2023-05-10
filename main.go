@@ -11,6 +11,7 @@ import (
 	"context"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
@@ -28,6 +29,16 @@ var dockerHost string = "tcp://192.168.1.130:2375"
 
 // var dockerHost string = "tcp://121.5.73.196:2375"
 var wsPort string = ":8081"
+
+var upgrader = websocket.Upgrader{
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
+	// 解决跨域问题
+	// websocket: request origin not allowed by Upgrader.CheckOrigin
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{
@@ -66,7 +77,8 @@ func main() {
 
 	for _, container := range containers {
 		log.Info(container.ID, container.Names, container.Status, container.State)
-		containerLogs(cli, ctx, container.ID)
+		exec(cli, ctx, container.ID)
+		//containerLogs(cli, ctx, container.ID)
 		//containerMonitor(cli, ctx, container.ID)
 		//containerLogs(cli, ctx, container.ID)
 		//containerExec(cli, ctx, container.ID)
@@ -87,16 +99,6 @@ func containerLogs(cli *client.Client, ctx context.Context, containerID string) 
 		return err
 	}
 	defer resp.Close()
-
-	upgrader := websocket.Upgrader{
-		ReadBufferSize:  1024,
-		WriteBufferSize: 1024,
-		// 解决跨域问题
-		// websocket: request origin not allowed by Upgrader.CheckOrigin
-		CheckOrigin: func(r *http.Request) bool {
-			return true
-		},
-	}
 
 	// 保存所有已连接的WebSocket客户端
 	clients := make(map[*websocket.Conn]bool)
@@ -158,6 +160,83 @@ func containerLogs(cli *client.Client, ctx context.Context, containerID string) 
 		return err
 	}
 	return nil
+}
+
+func exec(cli *client.Client, ctx context.Context, containerID string) {
+	execConfig := types.ExecConfig{
+		AttachStdout: true,
+		AttachStderr: true,
+		Cmd:          []string{"/bin/bash"},
+	}
+
+	resp, err := cli.ContainerExecCreate(ctx, containerID, execConfig)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	execID := resp.ID
+
+	execStartCheck := make(chan error)
+
+	go func() {
+		err = cli.ContainerExecStart(context.Background(), execID, types.ExecStartCheck{})
+		execStartCheck <- err
+	}()
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		conn, err := upgrader.Upgrade(w, r, nil)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer conn.Close()
+
+		ticker := time.NewTicker(5 * time.Second)
+		done := make(chan bool)
+
+		go func() {
+			for {
+				select {
+				case <-done:
+					return
+				case <-ticker.C:
+					if err := conn.WriteMessage(websocket.TextMessage, []byte("heartbeat")); err != nil {
+						log.Println(err)
+						return
+					}
+				}
+			}
+		}()
+
+		stream, err := cli.ContainerExecAttach(ctx, execID, types.ExecStartCheck{})
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		defer stream.Close()
+
+		go func() {
+			for {
+				buf := make([]byte, 4096)
+				n, err := stream.Reader.Read(buf)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, buf[0:n]); err != nil {
+					log.Println(err)
+					return
+				}
+			}
+		}()
+
+		select {
+		case <-execStartCheck:
+			done <- true
+		}
+	})
+
+	log.Fatal(http.ListenAndServe(":8082", nil))
 }
 
 //
