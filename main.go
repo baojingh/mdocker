@@ -8,9 +8,7 @@ package main
 */
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
@@ -18,6 +16,11 @@ import (
 	"io/ioutil"
 	"os"
 	"time"
+)
+
+var (
+	ctx context.Context
+	cli *client.Client
 )
 
 func init() {
@@ -28,19 +31,16 @@ func init() {
 		FullTimestamp:             true,
 		DisableLevelTruncation:    true,
 	})
-
+	ctx = context.Background()
+	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, _ = client.NewClientWithOpts(
+		client.WithHost("tcp://121.5.73.196:2375"),
+		client.WithAPIVersionNegotiation())
 }
 
 func main() {
 
 	log.Info("hello")
-
-	ctx := context.Background()
-	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	cli, err := client.NewClientWithOpts(client.WithHost("tcp://121.5.73.196:2375"), client.WithAPIVersionNegotiation())
-	if err != nil {
-		log.Error(err)
-	}
 
 	defer cli.Close()
 
@@ -89,13 +89,13 @@ func containerExec(cli *client.Client, ctx context.Context, containerID string) 
 	}
 	// 关闭I/O
 	defer hr.Close()
-	// 输入
-	hr.Conn.Write([]byte("ls\r"))
-	// 输出
-	scanner := bufio.NewScanner(hr.Conn)
-	for scanner.Scan() {
-		fmt.Println(scanner.Text())
-	}
+	//// 输入
+	//hr.Conn.Write([]byte("ls\r"))
+	//// 输出
+	//scanner := bufio.NewScanner(hr.Conn)
+	//for scanner.Scan() {
+	//	fmt.Println(scanner.Text())
+	//}
 	return nil
 }
 
