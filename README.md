@@ -27,6 +27,15 @@ https://github.com/AShadowMan/docker-web-terminal/blob/master/utility/myDocker.p
 https://github.com/jesseduffield/lazydocker
 ```
 
+```
+ws + exec + 前端
+https://blog.csdn.net/M2l0ZgSsVc7r69eFdTj/article/details/80788262
+https://blog.csdn.net/y4x5M0nivSrJaY3X92c/article/details/80617135
+```
+
+https://hui.lu/shi-yong-tornado-cao-zuo-docker-api/
+https://stackoverflow.com/questions/72517548/how-to-connect-to-a-docker-container-from-web
+https://github.com/bitbull-team/docker-exec-web-console
 
 ```
 https://docs.docker.com/engine/api/v1.41/
