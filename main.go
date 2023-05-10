@@ -8,7 +8,9 @@ package main
 */
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
@@ -89,13 +91,13 @@ func containerExec(cli *client.Client, ctx context.Context, containerID string) 
 	}
 	// 关闭I/O
 	defer hr.Close()
-	//// 输入
-	//hr.Conn.Write([]byte("ls\r"))
-	//// 输出
-	//scanner := bufio.NewScanner(hr.Conn)
-	//for scanner.Scan() {
-	//	fmt.Println(scanner.Text())
-	//}
+	// 输入
+	hr.Conn.Write([]byte("ls\r"))
+	// 输出
+	scanner := bufio.NewScanner(hr.Conn)
+	for scanner.Scan() {
+		fmt.Println(scanner.Text())
+	}
 	return nil
 }
 
