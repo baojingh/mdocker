@@ -208,7 +208,7 @@ func exec(cli *client.Client, ctx context.Context, containerID string) {
 			}
 		}()
 
-		stream, err := cli.ContainerExecAttach(ctx, execID, types.ExecStartCheck{})
+		stream, err := cli.ContainerExecAttach(ctx, execID, types.ExecStartCheck{Tty: true})
 		if err != nil {
 			log.Println(err)
 			return
