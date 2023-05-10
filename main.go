@@ -30,7 +30,7 @@ func main() {
 
 	ctx := context.Background()
 	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	cli, err := client.NewClientWithOpts(client.WithHost("tcp://121.5.73.196:2375"))
+	cli, err := client.NewClientWithOpts(client.WithHost("tcp://121.5.73.196:2375"), client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Error(err)
 	}
