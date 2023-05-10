@@ -178,10 +178,10 @@ func exec(cli *client.Client, ctx context.Context, containerID string) {
 
 	execStartCheck := make(chan error)
 
-	//go func() {
-	//	err = cli.ContainerExecStart(ctx, execID, types.ExecStartCheck{})
-	//	execStartCheck <- err
-	//}()
+	go func() {
+		err = cli.ContainerExecStart(ctx, execID, types.ExecStartCheck{})
+		execStartCheck <- err
+	}()
 
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := upgrader.Upgrade(w, r, nil)
