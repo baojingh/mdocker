@@ -1,4 +1,4 @@
-package mdocker
+package main
 
 /**
   @Author   : bob
@@ -8,7 +8,6 @@ package mdocker
 */
 
 import (
-	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
