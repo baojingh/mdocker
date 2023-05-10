@@ -9,7 +9,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
@@ -26,22 +25,24 @@ func init() {
 }
 
 func main() {
+
 	log.Info("hello")
 
 	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	//cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := client.NewClientWithOpts(client.WithHost("tcp://121.5.73.196:2375"))
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 	defer cli.Close()
 
 	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
-		panic(err)
+		log.Error(err)
 	}
 
 	for _, container := range containers {
-		fmt.Println(container.ID)
+		log.Info(container.ID)
 	}
 
 }
