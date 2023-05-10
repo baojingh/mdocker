@@ -163,6 +163,60 @@ func containerLogs(cli *client.Client, ctx context.Context, containerID string) 
 }
 
 func exec(cli *client.Client, ctx context.Context, containerID string) {
+
+	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
+		cmd := []string{"sh"}
+
+		execConfig := types.ExecConfig{
+			AttachStdin:  true,
+			AttachStdout: true,
+			AttachStderr: true,
+			Tty:          true,
+			Cmd:          cmd,
+		}
+
+		execID, _ := cli.ContainerExecCreate(ctx, containerID, execConfig)
+
+		stream, _ := cli.ContainerExecAttach(ctx, execID.ID, types.ExecStartCheck{Tty: true})
+		defer stream.Close()
+
+		conn, _ := upgrader.Upgrade(w, r, nil)
+		defer conn.Close()
+
+		go func() {
+			for {
+				buf := make([]byte, 4096)
+				n, err := stream.Reader.Read(buf)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				if err := conn.WriteMessage(websocket.TextMessage, buf[0:n]); err != nil {
+					log.Println(err)
+					return
+				}
+			}
+		}()
+
+		for {
+			buf := make([]byte, 4096)
+			n, err := stream.Reader.Read(buf)
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			if err := conn.WriteMessage(websocket.TextMessage, buf[0:n]); err != nil {
+				log.Println(err)
+				return
+			}
+		}
+	})
+
+	log.Fatal(http.ListenAndServe(":8082", nil))
+
+}
+
+func exec1(cli *client.Client, ctx context.Context, containerID string) {
 	execConfig := types.ExecConfig{
 		AttachStdout: true,
 		AttachStderr: true,
