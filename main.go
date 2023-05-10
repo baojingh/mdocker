@@ -26,7 +26,7 @@ var (
 
 var dockerHost string = "tcp://192.168.1.130:2375"
 
-//var dockerHost string = "tcp://121.5.73.196:2375"
+// var dockerHost string = "tcp://121.5.73.196:2375"
 var wsPort string = ":8081"
 
 func init() {
@@ -98,24 +98,59 @@ func containerLogs(cli *client.Client, ctx context.Context, containerID string) 
 		},
 	}
 
-	http.HandleFunc("/logs", func(writer http.ResponseWriter, request *http.Request) {
+	// 保存所有已连接的WebSocket客户端
+	clients := make(map[*websocket.Conn]bool)
+	// 创建一个channel用于向客户端发送数据
+	broadcast := make(chan []byte)
+
+	// 启动goroutine，定期从Docker日志中读取数据
+	go func() {
+		buffer := make([]byte, 4096)
+		for {
+			n, err := resp.Read(buffer)
+			if err != nil {
+				log.Error("fail to read data from container logs, ", err)
+				close(broadcast)
+				return
+			}
+			msg := make([]byte, n)
+			copy(msg, buffer[:n])
+			broadcast <- msg
+		}
+	}()
+
+	http.HandleFunc("/", func(writer http.ResponseWriter, request *http.Request) {
 		conn, err := upgrader.Upgrade(writer, request, nil)
 		if err != nil {
 			log.Error("fail to create websocket connection, ", err)
 			return
 		}
-		log.Info("create ws connection success")
-		defer conn.Close()
-		buffer := make([]byte, 4096)
+		log.Infof("create ws connection success")
+		clients[conn] = true
+
+		defer func() {
+			delete(clients, conn)
+			conn.Close()
+		}()
+
 		for {
-			_, err := resp.Read(buffer)
-			if err != nil {
-				log.Error("fail to read data from container logs, ", err)
-				return
+			select {
+			case msg, ok := <-broadcast:
+				if !ok {
+					return
+				}
+				for client := range clients {
+					err := client.WriteMessage(websocket.TextMessage, msg)
+					if err != nil {
+						log.Error("fail to send data to ws client", err)
+						delete(clients, client)
+						client.Close()
+					}
+				}
 			}
-			log.Infof("read data success, %s", string(buffer))
 		}
 	})
+
 	log.Infof("websocket starts in port %s", wsPort)
 	err = http.ListenAndServe(wsPort, nil)
 	if err != nil {
