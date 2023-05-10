@@ -9,7 +9,9 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
@@ -53,8 +55,9 @@ func main() {
 
 	for _, container := range containers {
 		log.Info(container.ID, container.Names, container.Status, container.State)
+		containerMonitor(cli, ctx, container.ID)
 		//containerLogs(cli, ctx, container.ID)
-		containerExec(cli, ctx, container.ID)
+		//containerExec(cli, ctx, container.ID)
 		//time.Sleep(time.Second * 9999)
 	}
 
@@ -69,6 +72,74 @@ func containerLogs(cli *client.Client, ctx context.Context, containerID string) 
 	}
 	io.Copy(os.Stdout, out)
 	return nil
+}
+
+type myStruct struct {
+	Id        string `json:"id"`
+	Read      string `json:"read"`
+	Preread   string `json:"preread"`
+	CpuStats  cpu    `json:"cpu_stats"`
+	num_procs string `json:"num_procs"`
+}
+
+type cpu struct {
+	Usage cpuUsage `json:"cpu_usage"`
+}
+
+type cpuUsage struct {
+	Total float64 `json:"total_usage"`
+}
+
+func containerMonitor(cli *client.Client, ctx context.Context, containerID string) {
+	// https://stackoverflow.com/questions/47154036/decode-json-from-stream-of-data-docker-go-sdk
+	// https://github.com/infracloudio/cstats/blob/master/src/getStats.go
+	stats, e := cli.ContainerStats(ctx, containerID, true)
+	if e != nil {
+		fmt.Errorf("%s", e.Error())
+	}
+	decoder := json.NewDecoder(stats.Body)
+	var containerStats myStruct
+	for {
+		select {
+		case <-ctx.Done():
+			stats.Body.Close()
+			fmt.Println("Stop logging")
+			return
+		default:
+			if err := decoder.Decode(&containerStats); err == io.EOF {
+				return
+			} else if err != nil {
+				log.Error(err)
+			}
+			fmt.Println(containerStats.CpuStats.Usage.Total)
+		}
+	}
+
+}
+
+func containerMonitor1(cli *client.Client, ctx context.Context, containerID string) {
+	containerStats, err := cli.ContainerStats(ctx, containerID, false)
+	if err != nil {
+		log.Error(err)
+	}
+	log.Info(containerStats.Body)
+
+	// https://www.cnblogs.com/xwxz/p/13637730.html
+	// https://stackoverflow.com/questions/47154036/decode-json-from-stream-of-data-docker-go-sdk
+	//ContainerStats的返回的结构如下 注意这个Body的类型是io.ReadCloser 好奇怪的类型 下面我们给他转成json
+	type ContainerStats struct {
+		Body   io.ReadCloser `json:"body"`
+		OSType string        `json:"ostype"`
+	}
+
+	fmt.Println(containerStats)
+	fmt.Println("containerStats.Body的内容是: ", containerStats.Body)
+	buf := new(bytes.Buffer)
+	//io.ReadCloser 转换成 Buffer 然后转换成json字符串
+	buf.ReadFrom(containerStats.Body)
+	newStr := buf.String()
+	fmt.Printf(newStr)
+
 }
 
 func containerExec(cli *client.Client, ctx context.Context, containerID string) error {
