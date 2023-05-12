@@ -126,6 +126,10 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		reader, _ := container.ConLogs("229dab4f6eaf")
 		buffer := make([]byte, 8096)
 		for {
+			if reader == nil {
+				log.Error("reader is nil")
+				break
+			}
 			n, _ := reader.Read(buffer)
 			log.Infof("read data size: %d, n is %d", len(buffer), n)
 			msgByte := make([]byte, n)
