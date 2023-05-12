@@ -12,7 +12,6 @@ import (
 	client "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"io"
-	wshandle "mdocker/ws"
 	"sync"
 )
 
@@ -78,40 +77,4 @@ func ConLogs(containerId string) (io.Reader, error) {
 		return nil, err
 	}
 	return resp, nil
-}
-
-func conLogs1(containerId string) error {
-	cli, err := GetDockerClient()
-	if err != nil {
-		log.Error(err)
-	}
-	defer cli.Close()
-	options := types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Follow:     true,
-	}
-	resp, err := cli.ContainerLogs(ctx, containerId, options)
-	if err != nil {
-		log.Errorf("fail to get the container %s logs, %s", containerId, err)
-		return err
-	}
-	defer resp.Close()
-
-	// 启动goroutine，定期从Docker日志中读取数据
-	go func() {
-		buffer := make([]byte, 4096)
-		for {
-			n, err := resp.Read(buffer)
-			if err != nil {
-				log.Error("fail to read data from container logs, ", err)
-				close(wshandle.LogsChan)
-				return
-			}
-			msgByte := make([]byte, n)
-			copy(msgByte, buffer[:n])
-			wshandle.LogsChan <- msgByte
-		}
-	}()
-	return err
 }
