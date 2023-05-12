@@ -168,7 +168,7 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	go func() {
-		for msgByte := range LogsChan {
+		for msgByte := range cli.sendChan {
 			err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
 			if err != nil {
 				log.Error("fal to send data to client, ", err)
