@@ -8,7 +8,6 @@ package container
 
 import (
 	"context"
-	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"sync"
@@ -59,32 +58,32 @@ func GetDockerClient() (*client.Client, context.Context, error) {
 //	log.Infof("get container list, size: %d", len(containers))
 //	return containers
 //}
-
-func ConLogs(containerId string) error {
-	//cli, err := GetDockerClient()
-	if err != nil {
-		log.Error(err)
-	}
-	defer cli.Close()
-
-	options := types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Follow:     true,
-		Timestamps: true,
-	}
-
-	// 监听Docker守护程序的事件
-	eventChan, errChan := cli.Events(context.Background(), types.EventsOptions{})
-	select {
-	case event := <-eventChan:
-		resp, err := cli.ContainerLogs(ctx, event.Actor.ID, options)
-		if err != nil {
-			log.Errorf("fail to get the container %s logs, %s", containerId, err)
-			return err
-		}
-	case err := <-errChan:
-		log.Error(err)
-	}
-
-}
+//
+//func ConLogs(containerId string) error {
+//	//cli, err := GetDockerClient()
+//	if err != nil {
+//		log.Error(err)
+//	}
+//	defer cli.Close()
+//
+//	options := types.ContainerLogsOptions{
+//		ShowStdout: true,
+//		ShowStderr: true,
+//		Follow:     true,
+//		Timestamps: true,
+//	}
+//
+//	// 监听Docker守护程序的事件
+//	eventChan, errChan := cli.Events(context.Background(), types.EventsOptions{})
+//	select {
+//	case event := <-eventChan:
+//		resp, err := cli.ContainerLogs(ctx, event.Actor.ID, options)
+//		if err != nil {
+//			log.Errorf("fail to get the container %s logs, %s", containerId, err)
+//			return err
+//		}
+//	case err := <-errChan:
+//		log.Error(err)
+//	}
+//
+//}
