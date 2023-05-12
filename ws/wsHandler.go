@@ -128,7 +128,6 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		for {
 			if reader == nil {
 				log.Error("reader is nil")
-				break
 			}
 			n, _ := reader.Read(buffer)
 			log.Infof("read data size: %d, n is %d", len(buffer), n)
