@@ -124,12 +124,18 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		reader, _ := container.ConLogs("229dab4f6eaf")
-		buffer := make([]byte, 4096)
+		buffer := make([]byte, 8096)
 		for {
 			n, _ := reader.Read(buffer)
+			log.Infof("read data size: %d", len(buffer))
 			msgByte := make([]byte, n)
 			copy(msgByte, buffer[:n])
-			_ = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
+			err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
+			if err != nil {
+				log.Error("fal to send data to client, ", err)
+				continue
+			}
+			log.Info("server send data to client success, #### ", string(msgByte))
 		}
 	}()
 
