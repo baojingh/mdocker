@@ -11,7 +11,6 @@ import (
 	"github.com/docker/docker/api/types"
 	client "github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"io"
 	"sync"
 )
 
@@ -34,7 +33,7 @@ func init() {
 	})
 }
 
-func GetDockerClient() (*client.Client, error) {
+func GetDockerClient() (*client.Client, context.Context, error) {
 	var err error
 	once.Do(func() {
 		cli, err = client.NewClientWithOpts(
@@ -43,38 +42,49 @@ func GetDockerClient() (*client.Client, error) {
 		ctx = context.Background()
 	})
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	log.Info("create docker client success")
-	return cli, nil
+	return cli, ctx, nil
 }
 
-func conList(containerId string) []types.Container {
-	cli, err := GetDockerClient()
-	defer cli.Close()
-	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+//
+//func conList(containerId string) []types.Container {
+//	cli, err := GetDockerClient()
+//	defer cli.Close()
+//	containers, err := cli.ContainerList(ctx, types.ContainerListOptions{})
+//	if err != nil {
+//		log.Error(err)
+//	}
+//	log.Infof("get container list, size: %d", len(containers))
+//	return containers
+//}
+
+func ConLogs(containerId string) error {
+	//cli, err := GetDockerClient()
 	if err != nil {
 		log.Error(err)
 	}
-	log.Infof("get container list, size: %d", len(containers))
-	return containers
-}
-
-func ConLogs(containerId string) (io.Reader, error) {
-	cli, err := GetDockerClient()
-	if err != nil {
-		log.Error(err)
-	}
 	defer cli.Close()
+
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
+		Timestamps: true,
 	}
-	resp, err := cli.ContainerLogs(ctx, containerId, options)
-	if err != nil {
-		log.Errorf("fail to get the container %s logs, %s", containerId, err)
-		return nil, err
+
+	// 监听Docker守护程序的事件
+	eventChan, errChan := cli.Events(context.Background(), types.EventsOptions{})
+	select {
+	case event := <-eventChan:
+		resp, err := cli.ContainerLogs(ctx, event.Actor.ID, options)
+		if err != nil {
+			log.Errorf("fail to get the container %s logs, %s", containerId, err)
+			return err
+		}
+	case err := <-errChan:
+		log.Error(err)
 	}
-	return resp, nil
+
 }

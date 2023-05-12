@@ -1,6 +1,7 @@
 package wshandle
 
 import (
+	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
 	"mdocker/container"
@@ -123,15 +124,39 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 	log.Info("client has registered success")
 
 	go func() {
-		reader, _ := container.ConLogs("229dab4f6eaf")
-		buffer := make([]byte, 2048)
-		for true {
-			n, _ := reader.Read(buffer)
-			if n > 0 {
-				msgByte := make([]byte, n)
-				copy(msgByte, buffer[:n])
-				LogsChan <- msgByte
+		cli, ctx, err := container.GetDockerClient()
+		if err != nil {
+			log.Error(err)
+		}
+		defer cli.Close()
+
+		options := types.ContainerLogsOptions{
+			ShowStdout: true,
+			ShowStderr: true,
+			Follow:     true,
+			Timestamps: true,
+		}
+
+		// 监听Docker守护程序的事件
+		eventChan, errChan := cli.Events(ctx, types.EventsOptions{})
+		select {
+		case event := <-eventChan:
+			reader, err := cli.ContainerLogs(ctx, event.Actor.ID, options)
+			if err != nil {
+				log.Errorf("fail to get the container %s logs, %s", event.Actor.ID, err)
+				return
 			}
+			buffer := make([]byte, 2048)
+			for true {
+				n, _ := reader.Read(buffer)
+				if n > 0 {
+					msgByte := make([]byte, n)
+					copy(msgByte, buffer[:n])
+					LogsChan <- msgByte
+				}
+			}
+		case err := <-errChan:
+			log.Error(err)
 		}
 	}()
 	go func() {
