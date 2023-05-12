@@ -4,6 +4,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"mdocker/container"
 	"net/http"
 )
@@ -25,7 +26,7 @@ type wsMessage struct {
 // 客户端结构
 type clientStruct struct {
 	conn     *websocket.Conn
-	sendChan chan wsMessage
+	sendChan chan []byte
 }
 
 // 服务端结构
@@ -56,58 +57,58 @@ func init() {
 	})
 }
 
-func (c *clientStruct) read() {
-	defer func() {
-		c.conn.Close()
-	}()
-	for true {
-		messageType, data, err := c.conn.ReadMessage()
-		if err != nil {
-			log.Error("Server fail to receive data from client, ", err)
-			break
-		}
-		log.Infof("Server receive data from client, %s", string(data))
-		msg := wsMessage{
-			messageType: messageType,
-			data:        data,
-		}
-		c.sendChan <- msg
-	}
-}
+//func (c *clientStruct) read() {
+//	defer func() {
+//		c.conn.Close()
+//	}()
+//	for true {
+//		messageType, data, err := c.conn.ReadMessage()
+//		if err != nil {
+//			log.Error("Server fail to receive data from client, ", err)
+//			break
+//		}
+//		log.Infof("Server receive data from client, %s", string(data))
+//		msg := wsMessage{
+//			messageType: messageType,
+//			data:        data,
+//		}
+//		c.sendChan <- msg
+//	}
+//}
 
-func (c *clientStruct) write(msgChan chan []byte) {
-	defer func() {
-		c.conn.Close()
-	}()
-	for true {
-		// 阻塞，直到有数据进入msgChan
-		msg := <-msgChan
-		log.Infof("get msg from channel, %s", string(msg))
-		err := c.conn.WriteMessage(websocket.TextMessage, msg)
-		if err != nil {
-			log.Info("Failed to write message to WebSocket:", err)
-			break
-		}
-		log.Infof("Server send message: %s", msg)
-	}
-}
+//func (c *clientStruct) write(msgChan chan []byte) {
+//	defer func() {
+//		c.conn.Close()
+//	}()
+//	for true {
+//		// 阻塞，直到有数据进入msgChan
+//		msg := <-msgChan
+//		log.Infof("get msg from channel, %s", string(msg))
+//		err := c.conn.WriteMessage(websocket.TextMessage, msg)
+//		if err != nil {
+//			log.Info("Failed to write message to WebSocket:", err)
+//			break
+//		}
+//		log.Infof("Server send message: %s", msg)
+//	}
+//}
 
-func (s *serverStruct) doHandle(w http.ResponseWriter, r *http.Request, msgChan chan []byte) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Error("fail to create ws success, ", err)
-		return
-	}
-	log.Infof("get ws success")
-
-	cli := &clientStruct{
-		conn:     conn,
-		sendChan: make(chan wsMessage, 100),
-	}
-	log.Info("client has registered success")
-	go cli.read()
-	go cli.write(msgChan)
-}
+//func (s *serverStruct) doHandle(w http.ResponseWriter, r *http.Request, msgChan chan []byte) {
+//	conn, err := upgrader.Upgrade(w, r, nil)
+//	if err != nil {
+//		log.Error("fail to create ws success, ", err)
+//		return
+//	}
+//	log.Infof("get ws success")
+//
+//	cli := &clientStruct{
+//		conn:     conn,
+//		sendChan: make(chan []byte, 100),
+//	}
+//	log.Info("client has registered success")
+//	go cli.read()
+//	go cli.write(msgChan)
+//}
 
 func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -119,29 +120,28 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 
 	cli := &clientStruct{
 		conn:     conn,
-		sendChan: make(chan wsMessage, 100),
+		sendChan: make(chan []byte, 100),
 	}
 	log.Info("client has registered success")
 
 	go func() {
-		cli, ctx, err := container.GetDockerClient()
+		dockerCli, ctx, err := container.GetDockerClient()
 		if err != nil {
 			log.Error(err)
 		}
-		defer cli.Close()
+		defer dockerCli.Close()
 
 		options := types.ContainerLogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
 			Follow:     true,
-			Timestamps: true,
 		}
 
 		// 监听Docker守护程序的事件
-		eventChan, errChan := cli.Events(ctx, types.EventsOptions{})
+		eventChan, errChan := dockerCli.Events(ctx, types.EventsOptions{})
 		select {
 		case event := <-eventChan:
-			reader, err := cli.ContainerLogs(ctx, event.Actor.ID, options)
+			reader, err := dockerCli.ContainerLogs(ctx, event.Actor.ID, options)
 			if err != nil {
 				log.Errorf("fail to get the container %s logs, %s", event.Actor.ID, err)
 				return
@@ -152,7 +152,15 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 				if n > 0 {
 					msgByte := make([]byte, n)
 					copy(msgByte, buffer[:n])
-					LogsChan <- msgByte
+					cli.sendChan <- msgByte
+				}
+				if err != nil {
+					if err == io.EOF {
+						break
+					} else {
+						log.Error(err)
+						return
+					}
 				}
 			}
 		case err := <-errChan:
@@ -160,8 +168,7 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 	go func() {
-		for {
-			msgByte := <-LogsChan
+		for msgByte := range LogsChan {
 			err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
 			if err != nil {
 				log.Error("fal to send data to client, ", err)
@@ -172,9 +179,9 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 	}()
 }
 
-func (s *serverStruct) containerExec(w http.ResponseWriter, r *http.Request) {
-	s.doHandle(w, r, ExecChan)
-}
+//func (s *serverStruct) containerExec(w http.ResponseWriter, r *http.Request) {
+//	s.doHandle(w, r, ExecChan)
+//}
 
 func (s *serverStruct) unregister(cli *clientStruct) {
 	if _, ok := s.clients[cli]; ok {
@@ -193,12 +200,12 @@ func (s *serverStruct) register(cli *clientStruct) {
 func StartWs() {
 	LogsChan = make(chan []byte, 100)
 	ExecChan = make(chan []byte, 100)
-	ser := &serverStruct{
-		clients:      make(map[*clientStruct]bool, 100),
-		registerChan: make(chan *clientStruct, 100),
-	}
+	//ser := &serverStruct{
+	//	clients:      make(map[*clientStruct]bool, 100),
+	//	registerChan: make(chan *clientStruct, 100),
+	//}
 	http.HandleFunc("/logs", ContainerLogs)
-	http.HandleFunc("/exec", ser.containerExec)
+	//http.HandleFunc("/exec", ser.containerExec)
 	log.Infof("Starting server on port %s", host)
 	err := http.ListenAndServe(host, nil)
 	if err != nil {
