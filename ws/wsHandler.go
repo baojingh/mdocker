@@ -156,10 +156,10 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 				}
 				if err != nil {
 					if err == io.EOF {
-						break
+						continue
 					} else {
 						log.Error(err)
-						return
+						continue
 					}
 				}
 			}
