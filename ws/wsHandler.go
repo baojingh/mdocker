@@ -131,6 +131,9 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 			}
 			n, _ := reader.Read(buffer)
 			log.Infof("read data size: %d, n is %d", len(buffer), n)
+			if n <= 0 {
+				break
+			}
 			msgByte := make([]byte, n)
 			copy(msgByte, buffer[:n])
 			err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
