@@ -70,8 +70,6 @@ func ConLogs(containerId string) (io.Reader, error) {
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
-		Timestamps: true,
-		Details:    true,
 	}
 	resp, err := cli.ContainerLogs(ctx, containerId, options)
 	if err != nil {
