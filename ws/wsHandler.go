@@ -8,6 +8,7 @@ import (
 	"io"
 	"mdocker/container"
 	"net/http"
+	"unicode/utf8"
 )
 
 /**
@@ -125,13 +126,20 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		sendChan: make(chan []byte, 100),
 	}
 	log.Info("client has registered success")
-	defer cli.conn.Close()
+	defer func() {
+		log.Info("cli.conn is closed")
+		cli.conn.Close()
+	}()
 
 	dockerCli, ctx, err := container.GetDockerClient()
 	if err != nil {
 		log.Error(err)
 	}
-	defer dockerCli.Close()
+	defer func() {
+		dockerCli.Close()
+		log.Info("dockerCli is closed")
+
+	}()
 
 	go func() {
 		options := types.ContainerLogsOptions{
@@ -145,15 +153,21 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 			log.Error("fail to get the container, ", err)
 			return
 		}
-		defer reader.Close()
+		defer func() {
+			log.Info("reader is closed")
+			reader.Close()
+		}()
+
 		for {
 			buffer := make([]byte, 512)
 			n, err := reader.Read(buffer)
+			if !utf8.Valid(buffer) {
+				log.Errorf("Received message from client contains invalid UTF-8: %v", buffer)
+				continue
+			}
 			//log.Infof("get data from reader, size: %d", n)
 			if n > 0 {
-				msgByte := make([]byte, n)
-				copy(msgByte, buffer[:n])
-				cli.sendChan <- msgByte
+				cli.sendChan <- buffer
 				log.Infof("%s", string(buffer))
 			}
 			if err != nil {
@@ -167,20 +181,28 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
-	//go func() {
-	//	for {
-	//		_, message, err := conn.ReadMessage()
-	//		if err != nil {
-	//			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-	//				log.Info("Client close conn success")
-	//			} else {
-	//				log.Error("conn has something wrong, ", err)
-	//			}
-	//			break
-	//		}
-	//		log.Infof("Received message from client: %s", message)
-	//	}
-	//}()
+	go func() {
+		for {
+			msgType, message, err := conn.ReadMessage()
+			if !utf8.Valid(message) {
+				log.Errorf("Received message from client contains invalid UTF-8: %v", message)
+				continue
+			}
+			log.Infof("Received message from client: %s", string(message))
+			log.Infof("messageType: %s", msgType)
+
+			if err != nil {
+				log.Error("conn has something wrong, ", err)
+				if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+					log.Info("Client close conn success")
+				} else {
+					log.Error("conn has something wrong, ", err)
+				}
+				break
+			}
+
+		}
+	}()
 	//
 	//
 	//buffer := make([]byte, 512)

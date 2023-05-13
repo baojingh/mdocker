@@ -117,7 +117,7 @@
 //			}
 //			msg := make([]byte, n)
 //			copy(msg, buffer[:n])
-//			broadcast <- msg
+//			broadcast <- msgstr
 //		}
 //	}()
 //
