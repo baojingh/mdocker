@@ -19,8 +19,9 @@ var (
 	once sync.Once
 )
 
-// var dockerHost string = "tcp://192.168.1.130:2375"
-var dockerHost string = "tcp://127.0.0.1:2375"
+var dockerHost string = "tcp://192.168.1.130:2375"
+
+//var dockerHost string = "tcp://127.0.0.1:2375"
 
 func init() {
 	log.SetFormatter(&log.TextFormatter{

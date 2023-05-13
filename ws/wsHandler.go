@@ -1,6 +1,7 @@
 package wshandle
 
 import (
+	"flag"
 	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
 	log "github.com/sirupsen/logrus"
@@ -15,7 +16,8 @@ import (
   @Description:
 */
 
-var host = ":8081"
+var host = flag.String("addr", ":8081", "http service address")
+var containerId = "50a866b74a24"
 
 // 消息体
 type wsMessage struct {
@@ -40,7 +42,7 @@ var LogsChan chan []byte
 var ExecChan chan []byte
 
 var upgrader = websocket.Upgrader{
-	ReadBufferSize:  2014,
+	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
 		return true
@@ -123,60 +125,110 @@ func ContainerLogs(w http.ResponseWriter, r *http.Request) {
 		sendChan: make(chan []byte, 100),
 	}
 	log.Info("client has registered success")
+	defer cli.conn.Close()
+
+	dockerCli, ctx, err := container.GetDockerClient()
+	if err != nil {
+		log.Error(err)
+	}
+	defer dockerCli.Close()
 
 	go func() {
-		dockerCli, ctx, err := container.GetDockerClient()
-		if err != nil {
-			log.Error(err)
-		}
-		defer dockerCli.Close()
-
 		options := types.ContainerLogsOptions{
 			ShowStdout: true,
 			ShowStderr: true,
 			Follow:     true,
+			Timestamps: false,
 		}
+		reader, err := dockerCli.ContainerLogs(ctx, containerId, options)
+		if err != nil {
+			log.Error("fail to get the container, ", err)
+			return
+		}
+		defer reader.Close()
+		for {
+			buffer := make([]byte, 512)
+			n, err := reader.Read(buffer)
+			//log.Infof("get data from reader, size: %d", n)
+			if n > 0 {
+				msgByte := make([]byte, n)
+				copy(msgByte, buffer[:n])
+				cli.sendChan <- msgByte
+				log.Infof("%s", string(buffer))
+			}
+			if err != nil {
+				if err == io.EOF {
+					log.Error("err is io.EOF ", err)
+					continue
+				} else {
+					log.Error("err is not io.EOF ", err)
+					continue
+				}
+			}
+		}
+	}()
+	//go func() {
+	//	for {
+	//		_, message, err := conn.ReadMessage()
+	//		if err != nil {
+	//			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+	//				log.Info("Client close conn success")
+	//			} else {
+	//				log.Error("conn has something wrong, ", err)
+	//			}
+	//			break
+	//		}
+	//		log.Infof("Received message from client: %s", message)
+	//	}
+	//}()
+	//
+	//
+	//buffer := make([]byte, 512)
+	//go func() {
+	//	for true {
+	//		n, err := reader.Read(buffer)
+	//		log.Infof("get data from reader, size: %d", n)
+	//		log.Error("get data from reader, ", err)
+	//		if n > 0 {
+	//			msgByte := make([]byte, n)
+	//			copy(msgByte, buffer[:n])
+	//			cli.sendChan <- msgByte
+	//		}
+	//		if err != nil {
+	//			if err == io.EOF {
+	//				log.Error("err is io.EOF ", err)
+	//				continue
+	//			} else {
+	//				log.Error("err is not io.EOF", err)
+	//				continue
+	//			}
+	//		}
+	//	}
+	//
+	//}()
+	//
+	for msgByte := range cli.sendChan {
+		log.Infof("cli.sendChan size %d", len(cli.sendChan))
+		err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
+		if err != nil {
+			log.Error("fal to send data to client, ", err)
+			continue
+		}
+		//log.Info("server send data to client success, #### ", string(msgByte))
+	}
+	//go func() {
+	//	for msgByte := range cli.sendChan {
+	//		log.Infof("cli.sendChan size %d", len(cli.sendChan))
+	//		err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
+	//		if err != nil {
+	//			log.Error("fal to send data to client, ", err)
+	//			continue
+	//		}
+	//		//log.Info("server send data to client success, #### ", string(msgByte))
+	//	}
+	//}()
+	log.Info("writer is done")
 
-		// 监听Docker守护程序的事件
-		eventChan, errChan := dockerCli.Events(ctx, types.EventsOptions{})
-		select {
-		case event := <-eventChan:
-			reader, err := dockerCli.ContainerLogs(ctx, event.Actor.ID, options)
-			if err != nil {
-				log.Errorf("fail to get the container %s logs, %s", event.Actor.ID, err)
-				return
-			}
-			buffer := make([]byte, 2048)
-			for true {
-				n, _ := reader.Read(buffer)
-				if n > 0 {
-					msgByte := make([]byte, n)
-					copy(msgByte, buffer[:n])
-					cli.sendChan <- msgByte
-				}
-				if err != nil {
-					if err == io.EOF {
-						continue
-					} else {
-						log.Error(err)
-						continue
-					}
-				}
-			}
-		case err := <-errChan:
-			log.Error(err)
-		}
-	}()
-	go func() {
-		for msgByte := range cli.sendChan {
-			err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
-			if err != nil {
-				log.Error("fal to send data to client, ", err)
-				continue
-			}
-			log.Info("server send data to client success, #### ", string(msgByte))
-		}
-	}()
 }
 
 //func (s *serverStruct) containerExec(w http.ResponseWriter, r *http.Request) {
@@ -207,7 +259,7 @@ func StartWs() {
 	http.HandleFunc("/logs", ContainerLogs)
 	//http.HandleFunc("/exec", ser.containerExec)
 	log.Infof("Starting server on port %s", host)
-	err := http.ListenAndServe(host, nil)
+	err := http.ListenAndServe(*host, nil)
 	if err != nil {
 		log.Error("Failed to start server:", err)
 	}
