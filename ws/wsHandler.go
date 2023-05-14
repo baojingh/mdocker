@@ -135,9 +135,64 @@ func convertStatsJSONToByte(stats types.StatsJSON) ([]byte, error) {
 	return bytes, nil
 }
 
+func ContainerInspect(w http.ResponseWriter, r *http.Request) {
+	// 传递参数
+	// ws://127.0.0.1:8081/inspect?id=a315b7da073d
+	containerId := r.URL.Query().Get("id")
+	inspect, err := container.ContainerInspect(containerId)
+	if err != nil {
+		log.Log.Error("fail to get the container inspect, ", err)
+		return
+	}
+	jsonString, err := json.Marshal(inspect)
+	w.Write(jsonString)
+}
+
+func ContainerExec(w http.ResponseWriter, r *http.Request) {
+	conn, _ := getWs(w, r)
+	cli := &clientStruct{
+		conn:      conn,
+		sendChan:  make(chan []byte, 100),
+		statsChan: make(chan types.StatsJSON, 100),
+	}
+	defer func() {
+		log.Log.Info("cli.conn is closed")
+		cli.conn.Close()
+	}()
+
+	// 传递参数
+	// ws://127.0.0.1:8081/exec?id=a315b7da073d
+	containerId := r.URL.Query().Get("id")
+	hr, err := container.ContainerExec(containerId)
+	if err != nil {
+		log.Log.Error("fail to get the container exec, ", err)
+		return
+	}
+
+	// 转发输入/输出至websocket
+	go func() {
+		buf := make([]byte, 512)
+		for {
+			nr, err := hr.Conn.Read(buf)
+			if nr > 0 {
+				err := conn.WriteMessage(websocket.TextMessage, buf[0:nr])
+				if err != nil {
+					return
+				}
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+	ReceiveFromClient(cli)
+}
+
 func StartWs() {
 	//http.HandleFunc("/logs", ContainerLogs)
-	http.HandleFunc("/stats", ContainerStats)
+	//http.HandleFunc("/stats", ContainerStats)
+	//http.HandleFunc("/inspect", ContainerInspect)
+	http.HandleFunc("/exec", ContainerExec)
 	log.Log.Infof("Starting server on port %s", host)
 	err := http.ListenAndServe(host, nil)
 	if err != nil {

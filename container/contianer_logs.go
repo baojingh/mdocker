@@ -19,10 +19,6 @@ func ContainerLogs(containerId string) (io.ReadCloser, error) {
 		log.Log.Error(err)
 		return nil, err
 	}
-	defer func() {
-		cli.Close()
-		log.Log.Info("docker client is closed")
-	}()
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
