@@ -58,5 +58,4 @@ func ReceiveFromDocker(cli *clientStruct) error {
 			cli.sendChan <- buffer
 		}
 	}
-
 }
