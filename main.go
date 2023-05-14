@@ -8,19 +8,8 @@ package main
 */
 
 import (
-	log "github.com/sirupsen/logrus"
 	wshandle "mdocker/ws"
 )
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{
-		TimestampFormat:           "2006-01-02 15:04:05",
-		ForceColors:               true,
-		EnvironmentOverrideColors: true,
-		FullTimestamp:             true,
-		DisableLevelTruncation:    true,
-	})
-}
 
 func main() {
 	wshandle.StartWs()

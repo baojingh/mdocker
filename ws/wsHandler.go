@@ -1,14 +1,11 @@
 package wshandle
 
 import (
-	"flag"
-	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"mdocker/container"
+	log "mdocker/logger"
 	"net/http"
-	"unicode/utf8"
 )
 
 /**
@@ -17,272 +14,63 @@ import (
   @Description:
 */
 
-var host = flag.String("addr", ":8081", "http service address")
-var containerId = "50a866b74a24"
+var host = ":8081"
 
-// 消息体
-type wsMessage struct {
-	messageType int
-	data        []byte
-}
+//var containerId = "50a866b74a24"
 
 // 客户端结构
 type clientStruct struct {
 	conn     *websocket.Conn
+	reader   io.ReadCloser
 	sendChan chan []byte
 }
 
-// 服务端结构
-type serverStruct struct {
-	clients        map[*clientStruct]bool
-	registerChan   chan *clientStruct
-	unregisterChan chan *clientStruct
-}
-
-var LogsChan chan []byte
-var ExecChan chan []byte
-
-var upgrader = websocket.Upgrader{
-	ReadBufferSize:  1024,
-	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
-func init() {
-	log.SetFormatter(&log.TextFormatter{
-		TimestampFormat:           "2006-01-02 15:04:05",
-		ForceColors:               true,
-		EnvironmentOverrideColors: true,
-		FullTimestamp:             true,
-		DisableLevelTruncation:    true,
-	})
-}
-
-//func (c *clientStruct) read() {
-//	defer func() {
-//		c.conn.Close()
-//	}()
-//	for true {
-//		messageType, data, err := c.conn.ReadMessage()
-//		if err != nil {
-//			log.Error("Server fail to receive data from client, ", err)
-//			break
-//		}
-//		log.Infof("Server receive data from client, %s", string(data))
-//		msg := wsMessage{
-//			messageType: messageType,
-//			data:        data,
-//		}
-//		c.sendChan <- msg
-//	}
-//}
-
-//func (c *clientStruct) write(msgChan chan []byte) {
-//	defer func() {
-//		c.conn.Close()
-//	}()
-//	for true {
-//		// 阻塞，直到有数据进入msgChan
-//		msg := <-msgChan
-//		log.Infof("get msg from channel, %s", string(msg))
-//		err := c.conn.WriteMessage(websocket.TextMessage, msg)
-//		if err != nil {
-//			log.Info("Failed to write message to WebSocket:", err)
-//			break
-//		}
-//		log.Infof("Server send message: %s", msg)
-//	}
-//}
-
-//func (s *serverStruct) doHandle(w http.ResponseWriter, r *http.Request, msgChan chan []byte) {
-//	conn, err := upgrader.Upgrade(w, r, nil)
-//	if err != nil {
-//		log.Error("fail to create ws success, ", err)
-//		return
-//	}
-//	log.Infof("get ws success")
-//
-//	cli := &clientStruct{
-//		conn:     conn,
-//		sendChan: make(chan []byte, 100),
-//	}
-//	log.Info("client has registered success")
-//	go cli.read()
-//	go cli.write(msgChan)
-//}
-
 func ContainerLogs(w http.ResponseWriter, r *http.Request) {
-	conn, err := upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		log.Error("fail to create ws success, ", err)
-		return
-	}
-	log.Infof("get ws success")
-
+	conn, _ := getWs(w, r)
 	cli := &clientStruct{
 		conn:     conn,
 		sendChan: make(chan []byte, 100),
 	}
-	log.Info("client has registered success")
 	defer func() {
-		log.Info("cli.conn is closed")
+		log.Log.Info("cli.conn is closed")
 		cli.conn.Close()
 	}()
 
-	dockerCli, ctx, err := container.GetDockerClient()
-	if err != nil {
-		log.Error(err)
-	}
-	defer func() {
-		dockerCli.Close()
-		log.Info("dockerCli is closed")
-
-	}()
-
 	go func() {
-		options := types.ContainerLogsOptions{
-			ShowStdout: true,
-			ShowStderr: true,
-			Follow:     true,
-			Timestamps: false,
-		}
-		reader, err := dockerCli.ContainerLogs(ctx, containerId, options)
-		if err != nil {
-			log.Error("fail to get the container, ", err)
-			return
-		}
-		defer func() {
-			log.Info("reader is closed")
-			reader.Close()
-		}()
-
+		// 传递参数
+		// ws://127.0.0.1:8081/logs?id=a315b7da073d
+		containerId := r.URL.Query().Get("id")
 		for {
-			buffer := make([]byte, 512)
-			n, err := reader.Read(buffer)
-			if !utf8.Valid(buffer) {
-				log.Errorf("Received message from client contains invalid UTF-8: %v", buffer)
-				continue
-			}
-			//log.Infof("get data from reader, size: %d", n)
-			if n > 0 {
-				cli.sendChan <- buffer
-				log.Infof("%s", string(buffer))
-			}
+			reader, err := container.ContainerLogs(containerId)
 			if err != nil {
-				if err == io.EOF {
-					log.Error("err is io.EOF ", err)
-					continue
-				} else {
-					log.Error("err is not io.EOF ", err)
-					continue
-				}
+				log.Log.Error("fail to get the container logs reader, ", err)
+				return
+			}
+			defer func() {
+				log.Log.Info("reader is closed")
+				reader.Close()
+			}()
+			cli.reader = reader
+			err = ReceiveFromDocker(cli)
+			if err != nil {
+				log.Log.Error("fail to read container logs, ", err)
+				// TODO 当容器重启之后，reader会被关闭。在实际场景中需要重新获取reader
+				// 此处待优化。临时方案是重新获取reader
+				reader, err = container.ContainerLogs(containerId)
 			}
 		}
 	}()
 	go func() {
-		for {
-			msgType, message, err := conn.ReadMessage()
-			if !utf8.Valid(message) {
-				log.Errorf("Received message from client contains invalid UTF-8: %v", message)
-				continue
-			}
-			log.Infof("Received message from client: %s", string(message))
-			log.Infof("messageType: %s", msgType)
-
-			if err != nil {
-				log.Error("conn has something wrong, ", err)
-				if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
-					log.Info("Client close conn success")
-				} else {
-					log.Error("conn has something wrong, ", err)
-				}
-				break
-			}
-
-		}
+		ReceiveFromClient(cli)
 	}()
-	//
-	//
-	//buffer := make([]byte, 512)
-	//go func() {
-	//	for true {
-	//		n, err := reader.Read(buffer)
-	//		log.Infof("get data from reader, size: %d", n)
-	//		log.Error("get data from reader, ", err)
-	//		if n > 0 {
-	//			msgByte := make([]byte, n)
-	//			copy(msgByte, buffer[:n])
-	//			cli.sendChan <- msgByte
-	//		}
-	//		if err != nil {
-	//			if err == io.EOF {
-	//				log.Error("err is io.EOF ", err)
-	//				continue
-	//			} else {
-	//				log.Error("err is not io.EOF", err)
-	//				continue
-	//			}
-	//		}
-	//	}
-	//
-	//}()
-	//
-	for msgByte := range cli.sendChan {
-		log.Infof("cli.sendChan size %d", len(cli.sendChan))
-		err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
-		if err != nil {
-			log.Error("fal to send data to client, ", err)
-			continue
-		}
-		//log.Info("server send data to client success, #### ", string(msgByte))
-	}
-	//go func() {
-	//	for msgByte := range cli.sendChan {
-	//		log.Infof("cli.sendChan size %d", len(cli.sendChan))
-	//		err = cli.conn.WriteMessage(websocket.TextMessage, msgByte)
-	//		if err != nil {
-	//			log.Error("fal to send data to client, ", err)
-	//			continue
-	//		}
-	//		//log.Info("server send data to client success, #### ", string(msgByte))
-	//	}
-	//}()
-	log.Info("writer is done")
-
-}
-
-//func (s *serverStruct) containerExec(w http.ResponseWriter, r *http.Request) {
-//	s.doHandle(w, r, ExecChan)
-//}
-
-func (s *serverStruct) unregister(cli *clientStruct) {
-	if _, ok := s.clients[cli]; ok {
-		delete(s.clients, cli)
-		cli.conn.Close()
-	}
-}
-
-func (s *serverStruct) register(cli *clientStruct) {
-	if cli != nil && cli.conn != nil {
-		s.clients[cli] = true
-		s.registerChan <- cli
-	}
+	SendFromServer(cli)
 }
 
 func StartWs() {
-	LogsChan = make(chan []byte, 100)
-	ExecChan = make(chan []byte, 100)
-	//ser := &serverStruct{
-	//	clients:      make(map[*clientStruct]bool, 100),
-	//	registerChan: make(chan *clientStruct, 100),
-	//}
 	http.HandleFunc("/logs", ContainerLogs)
-	//http.HandleFunc("/exec", ser.containerExec)
-	log.Infof("Starting server on port %s", host)
-	err := http.ListenAndServe(*host, nil)
+	log.Log.Infof("Starting server on port %s", host)
+	err := http.ListenAndServe(host, nil)
 	if err != nil {
-		log.Error("Failed to start server:", err)
+		log.Log.Error("Failed to start server:", err)
 	}
 }
