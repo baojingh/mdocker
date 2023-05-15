@@ -28,7 +28,7 @@
         var message = inputField.value;
 
         // 发送消息到服务器
-        term.send(message);
+        webSocket.send(message);
 
         // 清空输入框
         inputField.value = '';
