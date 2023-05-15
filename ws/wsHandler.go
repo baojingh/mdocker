@@ -179,7 +179,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 			nr, err := hr.Conn.Read(buf)
 			log.Log.Infof("read data from container, %s", string(buf))
 			if nr > 0 {
-				err := conn.WriteMessage(websocket.BinaryMessage, buf[0:nr])
+				err := conn.WriteMessage(websocket.TextMessage, buf[0:nr])
 				if err != nil {
 					return
 				}
@@ -195,6 +195,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 			log.Log.Errorf("Received message from client contains invalid UTF-8: %v", message)
 			continue
 		}
+		hr.Conn.Write(message)
 		log.Log.Infof("read message from client, %s", string(message))
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
