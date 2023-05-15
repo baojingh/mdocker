@@ -3,23 +3,34 @@
 <head>
     <link rel="stylesheet" href="node_modules/xterm/css/xterm.css"/>
     <script src="node_modules/xterm/lib/xterm.js"></script>
-    <script src="lib/xterm-addon-attach.min.js"></script>
 </head>
 <body>
 <div id="terminal"></div>
-
-
 <form>
     <input type="text" id="input-field">
     <button type="button" onclick="sendMessage()">Send</button>
 </form>
 
+<script src="lib/xterm-addon-attach.min.js"></script>
 <script>
     var term = new Terminal();
     var webSocket = new WebSocket('ws://127.0.0.1:8081/exec?id=229dab4f6eaf');
     var attachAddon = new AttachAddon.AttachAddon(webSocket);
     term.loadAddon(attachAddon);
     term.open(document.getElementById('terminal'));
+
+    function sendMessage() {
+        // 获取输入框的值
+        var inputField = document.getElementById('input-field');
+        var message = inputField.value;
+
+        // 发送消息到服务器
+        webSocket.send(message);
+
+        // 清空输入框
+        inputField.value = '';
+    }
+
     term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
 </script>
 </body>
