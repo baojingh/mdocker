@@ -1,0 +1,50 @@
+<template>
+  <div ref="xtermRef" style="width: calc(100% - 40px);height: 800px;padding: 20px" />
+</template>
+ 
+<script>
+import 'xterm/css/xterm.css'
+import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit'
+import { AttachAddon } from 'xterm-addon-attach'
+ 
+export default {
+  name: 'Xterm',
+  data() {
+    return {
+      term: null,
+      xtermRef: '',
+      socketURI: 'ws://127.0.0.1:8081/exec?id=229dab4f6eaf',
+      socket: ''
+    }
+  },
+  mounted() {
+    this.initTerm()
+  },
+  beforeDestroy() {
+    this.socket.close()
+    this.term.dispose()
+  },
+  methods: {
+    initTerm() {
+      // 1.xterm终端初始化
+      const term = new Terminal()
+ 
+      // 2.webSocket初始化
+      const socket = new WebSocket(this.socketURI)
+ 
+      // 3.websocket集成的插件,这里要注意,网上写了很多websocket相关代码.xterm4版本没必要.
+      const attachAddon = new AttachAddon(socket)
+ 
+      const fitAddon = new FitAddon() // 全屏插件
+      term.loadAddon(attachAddon)
+      term.loadAddon(fitAddon)
+      term.open(this.$refs['xtermRef'])
+      fitAddon.fit()
+      term.focus()
+      this.term = term
+      this.socket = socket
+    }
+  }
+}
+</script>
