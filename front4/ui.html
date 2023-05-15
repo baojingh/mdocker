@@ -1,21 +1,39 @@
 <!doctype html>
-  <html>
-    <head>
-      <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
-      <script src="node_modules/xterm/lib/xterm.js"></script>
-      <script src="lib/xterm-addon-attach.min.js"></script>
-    </head>
-    <body>
-      <div id="terminal"></div>
-      <script>
-        var term= new Terminal();
-	var webSocket = new WebSocket('ws://127.0.0.1:8081/exec?id=229dab4f6eaf');
-	var attachAddon = new AttachAddon.AttachAddon(webSocket);
-	term.loadAddon(attachAddon);
+<html>
+<head>
+    <link rel="stylesheet" href="node_modules/xterm/css/xterm.css"/>
+    <script src="node_modules/xterm/lib/xterm.js"></script>
+    <script src="lib/xterm-addon-attach.min.js"></script>
+</head>
+<body>
+<div id="terminal"></div>
+<form>
+    <input type="text" id="input-field">
+    <button type="button" onclick="sendMessage()">Send</button>
+</form>
+
+<script>
+    var term = new Terminal();
+    var webSocket = new WebSocket('ws://127.0.0.1:8081/exec?id=229dab4f6eaf');
+    var attachAddon = new AttachAddon.AttachAddon(webSocket);
+    term.loadAddon(attachAddon);
+    term.open(document.getElementById('terminal'));
+
+    // Send message to server on button click
+    function sendMessage() {
+        const inputField = document.getElementById('input-field');
+        const message = inputField.value;
+        socket.emit('message', message);
+        inputField.value = '';
+    }
+
+    // Receive messages from server and display in xterm
+    socket.on('message', (data) => {
+        term.write(data + '\r\n');
+    });
 
 
-        term.open(document.getElementById('terminal'));
-        term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
-      </script>
-    </body>
-  </html>
+    term.write('Hello from \x1B[1;3;31mxterm.js\x1B[0m $ ')
+</script>
+</body>
+</html>
