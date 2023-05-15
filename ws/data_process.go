@@ -20,6 +20,7 @@ func ReceiveFromClient(cli *clientStruct) {
 			log.Log.Errorf("Received message from client contains invalid UTF-8: %v", message)
 			continue
 		}
+		log.Log.Infof("read message from client, %s", string(message))
 		if err != nil {
 			if websocket.IsCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
 				log.Log.Info("Client close conn success")

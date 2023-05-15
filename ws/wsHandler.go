@@ -163,6 +163,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	// 传递参数
 	// ws://127.0.0.1:8081/exec?id=a315b7da073d
 	containerId := r.URL.Query().Get("id")
+	log.Log.Infof("get containerid %s", containerId)
 	hr, err := container.ContainerExec(containerId)
 	if err != nil {
 		log.Log.Error("fail to get the container exec, ", err)
@@ -174,6 +175,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 		buf := make([]byte, 512)
 		for {
 			nr, err := hr.Conn.Read(buf)
+			log.Log.Infof("read data from container, %s", string(buf))
 			if nr > 0 {
 				err := conn.WriteMessage(websocket.TextMessage, buf[0:nr])
 				if err != nil {

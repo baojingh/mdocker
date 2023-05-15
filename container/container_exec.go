@@ -24,6 +24,7 @@ func ContainerExec(containerId string) (types.HijackedResponse, error) {
 		log.Log.Error("fail to exec create container, ", err)
 		return types.HijackedResponse{}, err
 	}
+	log.Log.Info("ContainerExecCreate is done")
 
 	checkOptions := types.ExecStartCheck{
 		Detach: false,
@@ -34,5 +35,6 @@ func ContainerExec(containerId string) (types.HijackedResponse, error) {
 		log.Log.Error("fail to exec attach container, ", err)
 		return types.HijackedResponse{}, err
 	}
+	log.Log.Info("ContainerExecAttach is done")
 	return attach, nil
 }
