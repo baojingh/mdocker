@@ -160,7 +160,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 		log.Log.Info("cli.conn is closed")
 		cli.conn.Close()
 	}()
-
+	r.ParseForm()
 	// 传递参数
 	// ws://127.0.0.1:8081/exec?id=a315b7da073d
 	containerId := r.URL.Query().Get("id")
