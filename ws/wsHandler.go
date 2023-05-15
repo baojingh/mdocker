@@ -163,7 +163,8 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	// 传递参数
 	// ws://127.0.0.1:8081/exec?id=a315b7da073d
-	containerId := r.URL.Query().Get("id")
+	//containerId := r.URL.Query().Get("id")
+	containerId := "a315b7da073d"
 	log.Log.Infof("get containerid %s", containerId)
 	hr, err := container.ContainerExec(containerId)
 	if err != nil {
