@@ -1,35 +1,55 @@
-<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.min.js"></script>
-<script src="https://unpkg.com/xterm/dist/xterm.js"></script>
-
-<link href="https://unpkg.com/xterm/css/xterm.css" rel="stylesheet"/>
-
-
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <title>WebSocket Client</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.4/socket.io.min.js"></script>
-    <script src="https://unpkg.com/xterm/dist/xterm.js"></script>
-    <link href="https://unpkg.com/xterm/css/xterm.css" rel="stylesheet"/>
+    <meta charset="utf-8" />
+    <title>WebSocket Terminal</title>
+    <style>
+        #terminal-container {
+            width: 80%;
+            height: 500px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
-
 <body>
-<div id="terminal"></div>
+<div id="terminal-container"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xterm/4.7.0/xterm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.1/socket.io.slim.js"></script>
 <script>
-    var socket = io('ws://localhost:8081');
-    var term = new Terminal();
-    term.open(document.getElementById('terminal'));
-    socket.on('connect', function () {
-        term.writeln('Connected to server');
+    const socket = io("http://127.0.0.1:8081", {
+        withCredentials: true,
+        extraHeaders: {
+            "My-Custom-Header": "foobar",
+        },
     });
-    socket.on('message', function (data) {
+
+    const term = new Terminal();
+    term.open(document.getElementById("terminal-container"));
+
+    socket.on("connect", () => {
+        console.log("Connected to server");
+
+        term.write("\r\n*** Connected to backend ***\r\n");
+    });
+
+    socket.on("disconnect", () => {
+        console.log("Disconnected from server");
+
+        term.write("\r\n*** Disconnected from backend ***\r\n");
+    });
+
+    socket.on("message", (data) => {
+        console.log(`Received message: ${data}`);
+
         term.write(data);
     });
-    term.on('data', function (data) {
+
+    term.onData((data) => {
+        console.log(`Sent message: ${data}`);
+
         socket.send(data);
     });
 </script>
 </body>
-
 </html>
