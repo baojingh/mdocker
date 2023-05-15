@@ -1,47 +1,42 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>WebSocket Demo</title>
-    <style type="text/css">
-        #terminal-container {
-            width: 100%;
-            height: 500px;
-            margin-top: 20px;
-            border: 1px solid #ccc;
+<template>
+    <div ref="terminal"></div>
+</template>
+
+<script>
+    // 引入css
+    import "xterm/dist/xterm.css";
+    import "xterm/dist/addons/fullscreen/fullscreen.css";
+
+    import { Terminal } from "xterm";
+    // 自适应插件
+    import * as fit from "xterm/lib/addons/fit/fit";
+    // 全屏插件
+    import * as fullscreen from "xterm/lib/addons/fullscreen/fullscreen";
+    // web链接插件
+    import * as webLinks from "xterm/lib/addons/webLinks/webLinks";
+    // websocket插件
+    import * as attach from "xterm/lib/addons/attach/attach";
+
+    export default {
+        name: "Index",
+        created() {
+            // 安装插件
+            Terminal.applyAddon(attach);
+            Terminal.applyAddon(fit);
+            Terminal.applyAddon(fullscreen);
+            Terminal.applyAddon(webLinks);
+
+            // 初始化终端
+            const terminal = new Terminal();
+            // 打开websocket
+            const ws = new WebSocket("ws://127.0.0.1:8081/exec?id=229dab4f6eaf");
+            // 绑定到dom上
+            terminal.open(this.$refs.terminal);
+            // 加载插件
+            terminal.fit();
+            terminal.toggleFullScreen();
+            terminal.webLinksInit();
+            terminal.attach(ws);
         }
-    </style>
-</head>
-<body>
-    <div id="terminal-container"></div>
-    <form>
-        <input type="text" id="input-field">
-        <button type="button" onclick="sendMessage()">Send</button>
-    </form>
-
-    <script src="https://unpkg.com/xterm/dist/xterm.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.0/socket.io.js"></script>
-    <script>
-        // Create xterm instance
-        const term = new Terminal();
-        const terminalContainer = document.getElementById('terminal-container');
-        term.open(terminalContainer);
-
-        // Connect to WebSocket server
-        const socket = io('ws://localhost:8081/exec');
-
-        // Send message to server on button click
-        function sendMessage() {
-            const inputField = document.getElementById('input-field');
-            const message = inputField.value;
-            socket.emit('message', message);
-            inputField.value = '';
-        }
-
-        // Receive messages from server and display in xterm
-        socket.on('message', (data) => {
-            term.write(data + '\r\n');
-        });
-    </script>
-</body>
-</html>
+    };
+</script>
