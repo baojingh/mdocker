@@ -1,4 +1,4 @@
-package wshandle
+package ws_handle
 
 import (
 	"encoding/json"

@@ -8,9 +8,9 @@ package main
 */
 
 import (
-	wshandle "mdocker/ws"
+	ws_handle "mdocker/ws"
 )
 
 func main() {
-	wshandle.StartWs()
+	ws_handle.StartWs()
 }
