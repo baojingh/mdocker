@@ -9,7 +9,9 @@ package container
 import (
 	"context"
 	client "github.com/docker/docker/client"
+	"mdocker/config"
 	log "mdocker/logger"
+	"strings"
 	"sync"
 )
 
@@ -19,13 +21,23 @@ var (
 	once sync.Once
 )
 
-// var dockerHost string = "tcp://192.168.1.130:2375"
-// var dockerHost string = "tcp://127.0.0.1:2375"
-var dockerHost string = "tcp://11.0.1.128:2375"
+func composeDockerHost() string {
+	host := config.MDocker.Docker.Host
+	port := config.MDocker.Docker.Port
+	var builder strings.Builder
+	builder.WriteString("tcp://")
+	builder.WriteString(host)
+	builder.WriteString(":")
+	builder.WriteString(port)
+	res := builder.String()
+	log.Log.Infof("get docker host info: %s", res)
+	return res
+}
 
 func GetDockerClient() (*client.Client, context.Context, error) {
 	var err error
 	once.Do(func() {
+		dockerHost := composeDockerHost()
 		cli, err = client.NewClientWithOpts(
 			client.WithHost(dockerHost),
 			client.WithAPIVersionNegotiation())

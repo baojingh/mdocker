@@ -5,6 +5,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
 	"io"
+	"mdocker/config"
 	"mdocker/container"
 	log "mdocker/logger"
 	"net/http"
@@ -17,8 +18,6 @@ import (
   @Date:        5/12/2023 10:34 AM
   @Description:
 */
-
-var host = ":8081"
 
 // 客户端结构
 type clientStruct struct {
@@ -163,8 +162,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	r.ParseForm()
 	// 传递参数
 	// ws://127.0.0.1:8081/exec?id=a315b7da073d
-	//containerId := r.URL.Query().Get("id")
-	containerId := "a315b7da073d"
+	containerId := r.URL.Query().Get("id")
 	log.Log.Infof("get containerid %s", containerId)
 	hr, err := container.ContainerExec(containerId)
 	if err != nil {
@@ -209,12 +207,13 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 }
 
 func StartWs() {
+	wsPort := config.MDocker.Websocket.Port
 	//http.HandleFunc("/logs", ContainerLogs)
 	//http.HandleFunc("/stats", ContainerStats)
 	//http.HandleFunc("/inspect", ContainerInspect)
 	http.HandleFunc("/exec", ContainerExec)
-	log.Log.Infof("Starting server on port %s", host)
-	err := http.ListenAndServe(host, nil)
+	log.Log.Infof("Starting server on port %s", wsPort)
+	err := http.ListenAndServe(wsPort, nil)
 	if err != nil {
 		log.Log.Error("Failed to start server:", err)
 	}
