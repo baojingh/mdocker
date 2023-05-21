@@ -1,6 +1,7 @@
 
 docker:
-  host: 192.168.1.130
+#  host: 192.168.1.130
+  host: 11.0.1.128
   port: 2375
 
 websocket:
