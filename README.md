@@ -18,6 +18,10 @@ this is a tool to manage docker container. Detailed features:
 1. user and role management including password, role, access
 2. multi user login and usage
 3. security for websocket and docker
+4. monitor websocket server status, provide API for metrics.
+5. user, connections management. cache
+
+
 
 
 
