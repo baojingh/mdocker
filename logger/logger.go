@@ -11,7 +11,8 @@ var log = logger.New()
 func init() {
 	path := "./"
 	rotate.New(
-		filepath.Join()
+		filepath.Join(path, fmt.Sprintf("mdocker-%s.log", "%Y%m%d")),
+		
 
 
 	)
@@ -19,7 +20,7 @@ func init() {
 
 }
 
-func New() *logger.Logger() {
+func New() *logger.Logger {
 	return log
 }
 
