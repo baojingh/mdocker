@@ -1,9 +1,29 @@
 package logger
 
 import (
-	"github.com/sirupsen/logrus"
-	"sync"
+	logger "github.com/sirupsen/logrus"
+	rotate  "github.com/lestrrat-go/file-rotatelogs"
+	"path/filepath"
 )
+
+var log = logger.New()
+
+func init() {
+	path := "./"
+	rotate.New(
+		filepath.Join()
+
+
+	)
+
+
+}
+
+func New() *logger.Logger() {
+	return log
+}
+
+
 
 var (
 	Log     *logrus.Logger
