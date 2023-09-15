@@ -1,45 +1,30 @@
 package logger
 
 import (
-	logger "github.com/sirupsen/logrus"
-	rotate  "github.com/lestrrat-go/file-rotatelogs"
+	"fmt"
+	"io"
 	"path/filepath"
+	"time"
+
+	rotate "github.com/lestrrat-go/file-rotatelogs"
+	logger "github.com/sirupsen/logrus"
 )
 
 var log = logger.New()
 
 func init() {
 	path := "./"
-	rotate.New(
+	writer, err := rotate.New(
 		filepath.Join(path, fmt.Sprintf("mdocker-%s.log", "%Y%m%d")),
-		
-
-
+		rotate.WithLinkName(filepath.Join(path, "mdocker.log")),
+		rotate.WithRotationCount(5),
+		rotate.WithRotationTime(time.Hour*24),
 	)
-
-
+	if err != nil {
+		log.SetOutput(io.MultiWriter(writer))
+	}
 }
 
 func New() *logger.Logger {
 	return log
-}
-
-
-
-var (
-	Log     *logrus.Logger
-	initLog sync.Once
-)
-
-func init() {
-	initLog.Do(func() {
-		Log = logrus.New()
-		Log.SetFormatter(&logrus.TextFormatter{
-			TimestampFormat:           "2006-01-02 15:04:05",
-			ForceColors:               true,
-			EnvironmentOverrideColors: true,
-			FullTimestamp:             true,
-			DisableLevelTruncation:    true,
-		})
-	})
 }

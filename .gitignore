@@ -22,3 +22,13 @@ go.work
 .idea
 *.iml
 *.xml
+*.iml
+workspace.xml
+vcs.xml
+modules.xml
+profiles_settings.xml
+.idea/*
+.idea
+*.exe
+*.log
+mdocker

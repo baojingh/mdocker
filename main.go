@@ -8,9 +8,12 @@ package main
 */
 
 import (
-	ws_handle "mdocker/ws"
+	logger "mdocker/logger"
 )
 
+var log = logger.New()
+
 func main() {
-	ws_handle.StartWs()
+	log.Info("hello")
+	// ws_handle.StartWs()
 }

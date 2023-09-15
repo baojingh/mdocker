@@ -3,15 +3,14 @@ push:
 	git commit -m "update"
 	git push origin main
 
-
 build:
-	docker build .
+	go build  -o mdocker main.go
 
 install:
-	cp ./ /usr/bin
+	cp mdocker /usr/bin
 
 clean:
-	rm -rf ./rr
+	rm -rf mdocker
 
 
 

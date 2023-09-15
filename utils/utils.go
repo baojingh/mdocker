@@ -8,9 +8,12 @@ package config
 */
 
 import (
+	logger "mdocker/logger"
+
 	"github.com/spf13/viper"
-	log "mdocker/logger"
 )
+
+var log = logger.New()
 
 type DockerInfo struct {
 	Host string `yaml:"host"`
@@ -32,9 +35,9 @@ func init() {
 	viper.SetConfigFile("config/config.yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Log.Error("fail to read config file, ", err)
+		log.Errorln("fail to read config file, ", err)
 	}
 	if err := viper.Unmarshal(&MDocker); err != nil {
-		log.Log.Error("fail to get config object, ", err)
+		log.Errorln("fail to get config object, ", err)
 	}
 }
