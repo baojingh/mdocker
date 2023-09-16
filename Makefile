@@ -7,7 +7,7 @@ build:
 	go build  -o mdocker main.go
 
 install:
-	cp mdocker /usr/bin
+	cp mdocker /usr/local/bin
 
 clean:
 	rm -rf mdocker

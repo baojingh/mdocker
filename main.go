@@ -9,11 +9,12 @@ package main
 
 import (
 	logger "mdocker/logger"
+	ws_handle "mdocker/ws"
 )
 
 var log = logger.New()
 
 func main() {
-	log.Info("hello")
-	// ws_handle.StartWs()
+	log.Info("mdocker service starts")
+	ws_handle.StartWs()
 }
