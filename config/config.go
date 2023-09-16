@@ -1,4 +1,4 @@
-package entity
+package config
 
 /**
   @Author   : bob
@@ -8,11 +8,12 @@ package entity
 */
 
 import (
-	logger "mdocker/logger"
+	"mdocker/logger"
 
 	"github.com/spf13/viper"
 )
 
+// logger in container package
 var log = logger.New()
 
 type DockerInfo struct {
@@ -35,9 +36,9 @@ func init() {
 	viper.SetConfigFile("config/config.yaml")
 	err := viper.ReadInConfig()
 	if err != nil {
-		log.Errorln("fail to read config file, ", err)
+		log.Error("fail to read config file, ", err)
 	}
 	if err := viper.Unmarshal(&MDocker); err != nil {
-		log.Errorln("fail to get config object, ", err)
+		log.Error("fail to get config object, ", err)
 	}
 }

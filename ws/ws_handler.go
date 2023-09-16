@@ -2,6 +2,7 @@ package websocket
 
 import (
 	"io"
+	"mdocker/config"
 	"mdocker/container"
 	"net/http"
 	"unicode/utf8"

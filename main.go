@@ -8,13 +8,13 @@ package main
 */
 
 import (
+	ws "mdocker/dockerwebsocket"
 	logger "mdocker/logger"
-	ws_handle "mdocker/ws"
 )
 
 var log = logger.New()
 
 func main() {
 	log.Info("mdocker service starts")
-	ws_handle.StartWs()
+	ws.StartWebsocket()
 }
