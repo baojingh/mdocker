@@ -31,4 +31,6 @@ profiles_settings.xml
 .idea
 *.exe
 *.log
+
+# the binary executible file mdocker
 mdocker

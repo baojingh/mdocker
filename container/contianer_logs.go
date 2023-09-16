@@ -1,9 +1,9 @@
 package container
 
 import (
-	"github.com/docker/docker/api/types"
 	"io"
-	log "mdocker/logger"
+
+	"github.com/docker/docker/api/types"
 )
 
 /**
@@ -16,7 +16,7 @@ import (
 func ContainerLogs(containerId string) (io.ReadCloser, error) {
 	cli, ctx, err := GetDockerClient()
 	if err != nil {
-		log.Log.Error(err)
+		// log.Error(err)
 		return nil, err
 	}
 	options := types.ContainerLogsOptions{
@@ -27,7 +27,7 @@ func ContainerLogs(containerId string) (io.ReadCloser, error) {
 	}
 	reader, err := cli.ContainerLogs(ctx, containerId, options)
 	if err != nil {
-		log.Log.Error("fail to get the container, ", err)
+		log.Error("fail to get the container, ", err)
 		return nil, err
 	}
 	return reader, nil

@@ -8,12 +8,15 @@ package container
 
 import (
 	"context"
-	client "github.com/docker/docker/client"
-	"mdocker/config"
-	log "mdocker/logger"
+	entity "mdocker/entity"
+	logger "mdocker/logger"
 	"strings"
 	"sync"
+
+	client "github.com/docker/docker/client"
 )
+
+var log = logger.New()
 
 var (
 	ctx  context.Context
@@ -22,15 +25,15 @@ var (
 )
 
 func composeDockerHost() string {
-	host := config.MDocker.Docker.Host
-	port := config.MDocker.Docker.Port
+	host := entity.MDocker.Docker.Host
+	port := entity.MDocker.Docker.Port
 	var builder strings.Builder
 	builder.WriteString("tcp://")
 	builder.WriteString(host)
 	builder.WriteString(":")
 	builder.WriteString(port)
 	res := builder.String()
-	log.Log.Infof("get docker host info: %s", res)
+	log.Infof("get docker host info: %s", res)
 	return res
 }
 
@@ -46,6 +49,6 @@ func GetDockerClient() (*client.Client, context.Context, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	log.Log.Info("create docker client success")
+	log.Info("create docker client success")
 	return cli, ctx, nil
 }

@@ -22,3 +22,6 @@ this is a tool to manage docker container. Detailed features:
 5. user, connections management. cache
 
 
+# Is it secure to get docker.sock in the container?
+
+

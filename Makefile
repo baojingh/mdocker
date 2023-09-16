@@ -1,7 +1,11 @@
+all: clean build install
+
 push:
 	git add .
 	git commit -m "update"
 	git push origin main
+
+
 
 build:
 	go build  -o mdocker main.go
