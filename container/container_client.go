@@ -8,7 +8,7 @@ package container
 
 import (
 	"context"
-	entity "mdocker/entity"
+	"mdocker/config"
 	"strings"
 	"sync"
 
@@ -22,8 +22,8 @@ var (
 )
 
 func composeDockerHost() string {
-	host := entity.MDocker.Docker.Host
-	port := entity.MDocker.Docker.Port
+	host := config.MDocker.Docker.Host
+	port := config.MDocker.Docker.Port
 	var builder strings.Builder
 	builder.WriteString("tcp://")
 	builder.WriteString(host)

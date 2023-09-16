@@ -1,4 +1,4 @@
-package websocket
+package ws
 
 import (
 	"io"
@@ -82,7 +82,7 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func startWebsocket() {
+func StartWebsocket() {
 	wsPort := config.MDocker.Websocket.Port
 	// http.HandleFunc("/logs", ContainerLogs)
 	//http.HandleFunc("/stats", ContainerStats)

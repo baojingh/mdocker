@@ -8,7 +8,7 @@ package main
 */
 
 import (
-	ws "mdocker/dockerwebsocket"
+	ws "mdocker/dws"
 	logger "mdocker/logger"
 )
 
