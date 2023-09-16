@@ -9,14 +9,11 @@ package container
 import (
 	"context"
 	entity "mdocker/entity"
-	logger "mdocker/logger"
 	"strings"
 	"sync"
 
 	client "github.com/docker/docker/client"
 )
-
-var log = logger.New()
 
 var (
 	ctx  context.Context
@@ -47,6 +44,7 @@ func GetDockerClient() (*client.Client, context.Context, error) {
 		ctx = context.Background()
 	})
 	if err != nil {
+		log.Error("create docker client failure")
 		return nil, nil, err
 	}
 	log.Info("create docker client success")

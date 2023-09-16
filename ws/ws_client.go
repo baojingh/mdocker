@@ -1,10 +1,10 @@
-package ws_handle
+package websocket
 
 import (
 	"errors"
-	"github.com/gorilla/websocket"
-	log "mdocker/logger"
 	"net/http"
+
+	"github.com/gorilla/websocket"
 )
 
 /**
@@ -34,10 +34,10 @@ func RegisterWsClient(w http.ResponseWriter, r *http.Request, name string) (*WsC
 	}
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Log.Error("fail to create ws success, ", err)
+		log.Error("fail to create ws success, ", err)
 		return nil, err
 	}
-	log.Log.Infof("get ws client name %s", name)
+	log.Infof("get ws client name %s", name)
 	client := &WsClient{
 		conn:           conn,
 		name:           name,
@@ -51,15 +51,15 @@ func RegisterWsClient(w http.ResponseWriter, r *http.Request, name string) (*WsC
 
 func UnregisterClient(client *WsClient) (bool, error) {
 	if client == nil {
-		log.Log.Error("the client that request to unregister is nil")
+		log.Error("the client that request to unregister is nil")
 		return false, errors.New("NilErr")
 	}
 	if _, isExit := wsClientsMap[client]; isExit != true {
 		delete(wsClientsMap, client)
-		log.Log.Infof("delete client %s success", client)
+		log.Infof("delete client %s success", client)
 		return true, nil
 	}
-	log.Log.Infof("fail to delete client %s ", client)
+	log.Infof("fail to delete client %s ", client)
 	return false, errors.New("NotFoundErr")
 }
 
