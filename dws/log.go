@@ -1,6 +1,8 @@
-package dockerwebsocket
+package dws
 
-import "mdocker/logger"
+import (
+	logger "mdocker/logger"
+)
 
 // logger in container package
 var log = logger.New()

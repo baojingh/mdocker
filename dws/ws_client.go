@@ -1,4 +1,4 @@
-package websocket
+package dws
 
 import (
 	"errors"

@@ -8,7 +8,7 @@ package main
 */
 
 import (
-	ws "mdocker/dws"
+	dws "mdocker/dws"
 	logger "mdocker/logger"
 )
 
@@ -16,5 +16,5 @@ var log = logger.New()
 
 func main() {
 	log.Info("mdocker service starts")
-	ws.StartWebsocket()
+	dws.StartWebsocket()
 }
