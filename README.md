@@ -29,3 +29,11 @@ this is a tool to manage docker container. Detailed features:
 # DEV Tools
 websocket web
 http://www.easyswoole.com/wstool.html
+
+
+# Issues
+1. why ubuntu cannot open html
+https://askubuntu.com/questions/1184357/why-cant-chromium-suddenly-access-any-partition-except-for-home
+
+
+
