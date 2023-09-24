@@ -15,6 +15,6 @@ import (
 var log = logger.New()
 
 func main() {
-	log.Info("mdocker service starts")
+	log.Info("mdocker service starts success")
 	dws.StartWebsocket()
 }
