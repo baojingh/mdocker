@@ -15,7 +15,7 @@ func ContainerExec(containerId string) (types.HijackedResponse, error) {
 		AttachStdin:  true,
 		AttachStdout: true,
 		AttachStderr: true,
-		Cmd:          []string{"/bin/sh"},
+		Cmd:          []string{"/bin/bash"},
 		Tty:          true,
 	}
 	resp, err := cli.ContainerExecCreate(ctx, containerId, execOpts)
