@@ -1,9 +1,12 @@
-all: clean build run
+all: clean build cp run
 
 push:
 	git add .
 	git commit -m "update"
 	git push origin main
+
+cp:
+	cp -r front/ /home/${USER}
 
 run:
 	./mdocker
