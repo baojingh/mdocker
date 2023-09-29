@@ -82,11 +82,26 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// http://localhost:8081/login?username=hadoop&password=hadoop
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	password := r.URL.Query().Get("password")
+
+	isSuccess := authenticate(username, password)
+	if isSuccess {
+		log.Infof("User %s login success", username)
+	} else {
+		log.Infof("User %s login failure", username)
+	}
+
+}
+
 func StartWebsocket() {
 	wsPort := config.MDocker.Websocket.Port
 	// http.HandleFunc("/logs", ContainerLogs)
 	//http.HandleFunc("/stats", ContainerStats)
 	//http.HandleFunc("/inspect", ContainerInspect)
+	http.HandleFunc("/login", loginHandler)
 	http.HandleFunc("/exec", ContainerExec)
 	log.Infof("Starting server on port %s", wsPort)
 	err := http.ListenAndServe(wsPort, nil)

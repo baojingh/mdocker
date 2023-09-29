@@ -8,6 +8,7 @@ require (
 	github.com/lestrrat-go/file-rotatelogs v2.4.0+incompatible
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/viper v1.15.0
+	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 )
 
 require (
