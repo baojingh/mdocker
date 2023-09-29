@@ -17,6 +17,7 @@ var userList = []User{
 }
 
 var sessionStore *sessions.CookieStore
+var sessionCookieName = "mdocker-user-session"
 
 const (
 	cookieStoreAuthKey    = "key"
@@ -25,7 +26,7 @@ const (
 
 // Session存储的初始化工作
 func init() {
-	sessions.NewCookieStore(
+	sessionStore = sessions.NewCookieStore(
 		[]byte(cookieStoreAuthKey),
 		[]byte(cookieStoreEncryptKey),
 	)
@@ -54,10 +55,20 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
 	password := r.URL.Query().Get("password")
 
+	session, err := sessionStore.Get(r, sessionCookieName)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	isSuccess := authenticate(username, password)
 	if isSuccess {
 		log.Infof("User %s login success", username)
 	} else {
 		log.Infof("User %s login failure", username)
 	}
+
+	// 在session中标记用户已经通过登录验证
+	session.Values["authenticated"] = true
+	_ = session.Save(r, w)
 }
