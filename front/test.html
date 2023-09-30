@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login Form</title>
+</head>
+<body>
+    <form id="loginForm">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <br>
+        <input type="submit" value="Login">
+    </form>
+
+    <script>
+        document.getElementById("loginForm").addEventListener("submit", function(event) {
+            event.preventDefault(); // 阻止表单提交的默认行为
+
+            var username = document.getElementById("username").value;
+            var password = document.getElementById("password").value;
+
+            // 使用 Fetch API 发送登录请求到后端接口
+            fetch("http://127.0.0.1:8081/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "http://localhost:8081"
+                },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error("登录失败");
+                }
+                return response.json();
+            })
+            .then(function(data) {
+                // 处理登录成功后的逻辑
+                console.log(data);
+                // 重定向到其他页面或执行其他操作
+            })
+            .catch(function(error) {
+                // 处理登录失败后的逻辑
+                console.error(error);
+            });
+        });
+    </script>
+</body>
+</html>
