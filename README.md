@@ -40,9 +40,12 @@ https://askubuntu.com/questions/1184357/why-cant-chromium-suddenly-access-any-pa
 ### test
 ```
 curl -H "Content-Type: application/json" -X POST -d '{"username": "hadoop", "password":"hadoop"}'  http://localhost:8081/login
-
-
-
 ```
+
+# DONE
+1. login is ok, but cookie seems not integrate in to frontend
+2. container list cannot jump to exec dashboard
+3. I think I should save real-time data in database.
+
 
 
