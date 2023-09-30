@@ -72,3 +72,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["authenticated"] = true
 	_ = session.Save(r, w)
 }
+
+// 用户登出，会在 Session 中标记用户是未认证的
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := sessionStore.Get(r, sessionCookieName)
+	session.Values["authenticated"] = false
+	session.Save(r, w)
+	log.Info("User logout success")
+}
+
+// 通过用户 Session 判断用户是否已认证，未认证返回 403 Forbidden 错误。
+func SecretHandler(w http.ResponseWriter, r *http.Request) {
+	session, _ := sessionStore.Get(r, sessionCookieName)
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+	log.Info(w)
+}
