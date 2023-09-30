@@ -6,7 +6,9 @@ push:
 	git push origin main
 
 cp:
-	cp -r front/ /home/${USER}
+	sudo rm -rf /var/www/html/front
+	sudo cp -r front/ /var/www/html
+	sudo systemctl  restart nginx
 
 run:
 	./mdocker

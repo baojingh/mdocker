@@ -1,6 +1,7 @@
 package dws
 
 import (
+	"encoding/json"
 	"io"
 	"mdocker/config"
 	"mdocker/container"
@@ -83,6 +84,25 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ContainerList(w http.ResponseWriter, r *http.Request) {
+	containers, _ := container.ContainerList()
+	// 将数组转换为 JSON
+	jsonData, err := json.Marshal(containers)
+	if err != nil {
+		return
+	}
+
+	// 设置响应头，指定内容类型为 application/json
+	w.Header().Set("Content-Type", "application/json")
+	// 发送 JSON 数据作为 HTTP 响应
+	log.Info(containers)
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Write(jsonData)
+}
+
 func StartWebsocket() {
 	wsPort := config.MDocker.Websocket.Port
 	// POST
@@ -91,6 +111,7 @@ func StartWebsocket() {
 	http.HandleFunc("/logout", user.LogoutHandler)
 	http.HandleFunc("/secret", user.SecretHandler)
 	http.HandleFunc("/exec", ContainerExec)
+	http.HandleFunc("/list", ContainerList)
 	log.Infof("Starting server on port %s", wsPort)
 	err := http.ListenAndServe(wsPort, nil)
 	if err != nil {

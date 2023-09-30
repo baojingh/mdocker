@@ -39,20 +39,26 @@ func init() {
 }
 
 // authenticate the user and password
-func authenticate(username string, password string) bool {
+func authenticate(username string, password string) (bool, error) {
+	var err error
 	for _, user := range userList {
 		if user.Username == username {
 			currPd, _ := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 			// first param should be hash password, second param should be original password
 			err := bcrypt.CompareHashAndPassword(currPd, []byte(user.Password))
-			return err == nil
+			return err == nil, err
 		}
 	}
-	return false
+	return false, err
 }
 
 // http://localhost:8081/login?username=hadoop&password=hadoop
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	// process cross origin issues for frontend
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
 	req := &struct {
 		Username string `json: "username"`
 		Password string `json: "password"`
@@ -67,7 +73,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isSuccess := authenticate(username, password)
+	isSuccess, _ := authenticate(username, password)
+	log.Infof("username: %s, password: %s, isSuccess: %v", username, password, isSuccess)
 	if isSuccess {
 		log.Infof("User %s login success", username)
 	} else {
@@ -76,7 +83,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 在session中标记用户已经通过登录验证
 	session.Values["authenticated"] = true
-	w.Write([]byte("login success\n"))
+
 	_ = session.Save(r, w)
 }
 
