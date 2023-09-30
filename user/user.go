@@ -1,6 +1,7 @@
 package user
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/sessions"
@@ -52,8 +53,13 @@ func authenticate(username string, password string) bool {
 
 // http://localhost:8081/login?username=hadoop&password=hadoop
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Query().Get("username")
-	password := r.URL.Query().Get("password")
+	req := &struct {
+		Username string `json: "username"`
+		Password string `json: "password"`
+	}{}
+	json.NewDecoder(r.Body).Decode(req)
+	username := req.Username
+	password := req.Password
 
 	session, err := sessionStore.Get(r, sessionCookieName)
 	if err != nil {
@@ -70,6 +76,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 
 	// 在session中标记用户已经通过登录验证
 	session.Values["authenticated"] = true
+	w.Write([]byte("login success\n"))
 	_ = session.Save(r, w)
 }
 
@@ -77,6 +84,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	session, _ := sessionStore.Get(r, sessionCookieName)
 	session.Values["authenticated"] = false
+	w.Write([]byte("logout success\n"))
 	session.Save(r, w)
 	log.Info("User logout success")
 }

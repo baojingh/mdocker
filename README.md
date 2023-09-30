@@ -37,3 +37,12 @@ https://askubuntu.com/questions/1184357/why-cant-chromium-suddenly-access-any-pa
 
 
 
+### test
+```
+curl -H "Content-Type: application/json" -X POST -d '{"username": "hadoop", "password":"hadoop"}'  http://localhost:8081/login
+
+
+
+```
+
+

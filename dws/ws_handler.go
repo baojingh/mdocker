@@ -85,10 +85,11 @@ func ContainerExec(w http.ResponseWriter, r *http.Request) {
 
 func StartWebsocket() {
 	wsPort := config.MDocker.Websocket.Port
-	// http.HandleFunc("/logs", ContainerLogs)
-	//http.HandleFunc("/stats", ContainerStats)
-	//http.HandleFunc("/inspect", ContainerInspect)
+	// POST
 	http.HandleFunc("/login", user.LoginHandler)
+
+	http.HandleFunc("/logout", user.LogoutHandler)
+	http.HandleFunc("/secret", user.SecretHandler)
 	http.HandleFunc("/exec", ContainerExec)
 	log.Infof("Starting server on port %s", wsPort)
 	err := http.ListenAndServe(wsPort, nil)
