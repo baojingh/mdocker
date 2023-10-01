@@ -21,7 +21,6 @@ import (
 type clientStruct struct {
 	conn      *websocket.Conn
 	reader    io.ReadCloser
-	sendChan  chan []byte
 	statsChan chan types.StatsJSON
 }
 
@@ -29,7 +28,6 @@ func ContainerStats(w http.ResponseWriter, r *http.Request) {
 	conn, _ := RegisterWsClient(w, r)
 	cli := &clientStruct{
 		conn:      conn.conn,
-		sendChan:  make(chan []byte, 100),
 		statsChan: make(chan types.StatsJSON, 100),
 	}
 	defer func() {
@@ -41,7 +39,7 @@ func ContainerStats(w http.ResponseWriter, r *http.Request) {
 	// ws://127.0.0.1:8081/stats?id=a315b7da073d
 	containerId := "79bc6f76f667"
 
-	reader, err := container.ContainerStats(containerId)
+	ctx, reader, err := container.ContainerStats(containerId)
 	if err != nil {
 		log.Error("fail to get the container stats reader, ", err)
 		return
@@ -50,27 +48,41 @@ func ContainerStats(w http.ResponseWriter, r *http.Request) {
 		log.Info("stats reader is closed")
 		reader.Close()
 	}()
+
+	decoder := json.NewDecoder(reader)
+	var statsValue types.StatsJSON
+
 	go func() {
-		var statsValue types.StatsJSON
 		for {
-			decoder := json.NewDecoder(reader)
-			err := decoder.Decode(&statsValue)
-			if err != nil {
-				log.Error("cannot decode stats data, ", err)
-			}
-			cli.statsChan <- statsValue
-			if err != nil {
-				log.Error("fail to read container logs, ", err)
-				// TODO 当容器重启之后，reader会被关闭。在实际场景中需要重新获取reader
-				// 此处待优化。临时方案是重新获取reader
-				reader, _ = container.ContainerStats(containerId)
+			// 可以同时监听多个通道的数据流动，通过 case 分支来处理具体的通道操作。
+			// 当有多个通道同时可用时，select 会随机选择一个可用的通道进行操作。
+			// 当所有的通道都阻塞时，select 可以执行默认的 default 分支，实现非阻塞的操作。
+			select {
+			case <-ctx.Done():
+				reader.Close()
+				log.Warn("Stop logging metrics")
+				return
+			default:
+				if err := decoder.Decode(&statsValue); err == io.EOF {
+					log.Warn("Receive EOF flag")
+					return
+				} else if err != nil {
+					log.Error("Something Error occured", err)
+					return
+				} else {
+					cli.statsChan <- statsValue
+				}
 			}
 		}
 	}()
 
-	for stats := range cli.statsChan {
-
-		log.Info(stats)
+	// 当通道为空时，range 会阻塞等待，直到通道中有数据或者通道被关闭。
+	for statJSON := range cli.statsChan {
+		statsJSONBytes, err := json.MarshalIndent(statJSON, "", "  ")
+		if err != nil {
+			panic(err)
+		}
+		log.Info(string(statsJSONBytes))
 	}
 }
 
