@@ -16,7 +16,6 @@ import (
 
 type WsClient struct {
 	conn           *websocket.Conn
-	name           string
 	active         bool
 	receiveMsgChan chan []byte
 	sendMsgChan    chan []byte
@@ -24,7 +23,7 @@ type WsClient struct {
 
 var wsClientsMap = make(map[*WsClient]bool)
 
-func RegisterWsClient(w http.ResponseWriter, r *http.Request, name string) (*WsClient, error) {
+func RegisterWsClient(w http.ResponseWriter, r *http.Request) (*WsClient, error) {
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
@@ -37,10 +36,8 @@ func RegisterWsClient(w http.ResponseWriter, r *http.Request, name string) (*WsC
 		log.Error("fail to create ws success, ", err)
 		return nil, err
 	}
-	log.Infof("get ws client name %s", name)
 	client := &WsClient{
 		conn:           conn,
-		name:           name,
 		active:         true,
 		receiveMsgChan: make(chan []byte, 10),
 		sendMsgChan:    make(chan []byte, 10),

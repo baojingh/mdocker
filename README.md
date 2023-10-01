@@ -48,4 +48,12 @@ curl -H "Content-Type: application/json" -X POST -d '{"username": "hadoop", "pas
 3. I think I should save real-time data in database.
 
 
+# Install Influxdb
+```
+docker pull influxdb:2.7.1
+
+
+
+```
+
 

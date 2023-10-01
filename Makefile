@@ -1,14 +1,9 @@
-all: clean build cp run
+all: clean build run
 
 push:
 	git add .
 	git commit -m "update"
 	git push origin main
-
-cp:
-	sudo rm -rf /var/www/html/front
-	sudo cp -r front/ /var/www/html
-	sudo systemctl  restart nginx
 
 run:
 	./mdocker
