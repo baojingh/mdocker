@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/docker/docker/api/types"
 )
@@ -20,8 +21,6 @@ import (
 var log = logger.New()
 
 func main() {
-
-	statsChan := make(chan types.StatsJSON)
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
@@ -34,9 +33,11 @@ func main() {
 	containerList := handler.ContainerList()
 	for _, ele := range containerList {
 		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
-		handler.StatsProducer("vcfa", statsChan)
+		statsChan := make(chan types.StatsJSON)
+		go handler.StatsProducer(ele.Id, statsChan)
+		go handler.DbConsumer(statsChan)
 
 	}
-
+	time.Sleep(1 * time.Minute)
 	log.Info("mdocker service starts success")
 }
