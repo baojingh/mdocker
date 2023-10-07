@@ -1,4 +1,4 @@
-package dws
+package handler
 
 import (
 	logger "mdocker/logger"

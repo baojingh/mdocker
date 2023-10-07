@@ -8,7 +8,7 @@ package main
 */
 
 import (
-	dws "mdocker/dws"
+	handler "mdocker/handler"
 	logger "mdocker/logger"
 	"os"
 	"os/signal"
@@ -18,6 +18,9 @@ import (
 var log = logger.New()
 
 func main() {
+
+	// statsChan := make(chan types.StatsJSON)
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
 	go func() {
@@ -26,6 +29,11 @@ func main() {
 		os.Exit(0)
 	}()
 
+	// handler.StatsProducer("vcfa", statsChan)
+	containerList := handler.ContainerList()
+	for _, ele := range containerList {
+		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
+	}
+
 	log.Info("mdocker service starts success")
-	dws.StartWebsocket()
 }
