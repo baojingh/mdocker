@@ -23,6 +23,11 @@ this is a tool to manage docker container. Detailed features:
 
 
 # Is it secure to get docker.sock in the container?
+Yes. It's very dangerous and we should avoid this.
+1. Use Https instead of docker.sock file.
+2. Alternative ways to meet your target.
+
+
 
 
 
@@ -53,7 +58,9 @@ curl -H "Content-Type: application/json" -X POST -d '{"username": "hadoop", "pas
 docker pull influxdb:2.7.1
 
 
-
 ```
+
+
+
 
 
