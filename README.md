@@ -90,6 +90,52 @@ nXom-eG4c_SwYgoDsxFOrfz_hIg0_je6tSDTkC9MssBxl5F0eyVzSEIOazx_89513o4Y5Ld2NOwsllCK
 1. add go package
 go get github.com/influxdata/influxdb-client-go/v2
 
+### Influxdb Usage
+1. bucket查看
+influx bucket list -o <org-name or org-id> -t <your-token>
+
+2. 执行过后所有需要该token的指令就不需要指定token. File /etc/influxdb2/influx-configs exits.
+influx config create --active -n mdocker-config  -t  nXom-eG4c_SwYgoDsxFOrfz_hIg0_je6tSDTkC9MssBxl5F0eyVzSEIOazx_89513o4Y5Ld2NOwsllCK41L3xg== -u http://localhost:8086 -o mdocker
+```bash
+root@aa9073f6d803:/etc/influxdb2# cat influx-configs 
+[mdocker-config]
+  url = "http://localhost:8086"
+  token = "nXom-eG4c_SwYgoDsxFOrfz_hIg0_je6tSDTkC9MssBxl5F0eyVzSEIOazx_89513o4Y5Ld2NOwsllCK41L3xg=="
+  org = "mdocker"
+  active = true
+```
+
+3. list config info
+influx config ls
+
+
+4. 查看用户
+root@aa9073f6d803:/etc/influxdb2# influx  user  list
+ID			Name
+0bef9742361cd000	hadoop
+
+5. 查看已存在的 org
+influx org list
+
+6. view data in db
+```bash
+# influx query
+from(bucket:"mdocker-bucket")
+    |> range(start: -1d)
+    |> filter(fn: (r) => r.tagname1 == "tagvalue1")
+```
+
+Ctrl + D will execute and display the data.
+
+
+
+
+
+
+
+
+
+
 
 
 

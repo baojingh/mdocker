@@ -2,54 +2,61 @@ package handler
 
 import (
 	"encoding/json"
-	"mdocker/handler"
+	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 const (
-	org = "mdocker"
+	org    = "mdocker"
 	bucket = "mdocker-bucket"
 )
 
 func DbConsumer(statsChan chan types.StatsJSON) {
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
-	for value := 0; value < 5; value++ {
+	for val := range statsChan {
+		statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
+		statsStr := string(statsJSONBytes)
+		log.Info(statsStr)
 		tags := map[string]string{
 			"tagname1": "tagvalue1",
 		}
 		fields := map[string]interface{}{
-			"field1": value,
+			"field1": statsStr,
 		}
 		point := write.NewPoint("measurement1", tags, fields, time.Now())
-		time.Sleep(1 * time.Second) // separate points by 1 second
-	
 		if err := writeAPI.WritePoint(ctx, point); err != nil {
 			log.Fatal(err)
 		}
-	}
-
-	for val := range statsChan {
-		statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
-		log.Info(string(statsJSONBytes))
+		log.Info("Data is save success")
+		// DbDataView()
 	}
 }
 
-
-
-writeAPI := client.WriteAPIBlocking(org, bucket)
-for value := 0; value < 5; value++ {
-	tags := map[string]string{
-		"tagname1": "tagvalue1",
+func DbDataView() {
+	client, ctx := GetInfluxdbClient()
+	// Get query client
+	queryAPI := client.QueryAPI(org)
+	// Get parser flux query result
+	result, err := queryAPI.Query(ctx, `from(bucket:"mdocker-bucket")|> range(start: -10h) |> filter(fn: (r) => r._measurement == "measurement1")`)
+	if err == nil {
+		// Use Next() to iterate over query result lines
+		for result.Next() {
+			// Observe when there is new grouping key producing new table
+			if result.TableChanged() {
+				log.Infof("table: %s\n", result.TableMetadata().String())
+			}
+			// read result
+			log.Infof("row: %s\n", result.Record().String())
+		}
+		if result.Err() != nil {
+			log.Infof("Query error: %s\n", result.Err().Error())
+		}
+	} else {
+		panic(err)
 	}
-	fields := map[string]interface{}{
-		"field1": value,
-	}
-	point := write.NewPoint("measurement1", tags, fields, time.Now())
-	time.Sleep(1 * time.Second) // separate points by 1 second
-
-	if err := writeAPI.WritePoint(context.Background(), point); err != nil {
-		log.Fatal(err)
-	}
+	// Ensures background processes finishes
+	client.Close()
 }
