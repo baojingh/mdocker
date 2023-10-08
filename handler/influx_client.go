@@ -19,9 +19,8 @@ func GetInfluxdbClient() (influxdb2.Client, context.Context) {
 	once.Do(func() {
 		client = influxdb2.NewClient(url, token)
 		ctx = context.Background()
-		log.Info("influxdb client is initialized success")
+		log.Infof("influxdb client is initialized success, client: %p", &client)
 	})
 	log.Infof("Get influxdb client success, %p", &client)
 	return client, ctx
-
 }

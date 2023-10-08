@@ -42,11 +42,12 @@ func GetDockerClient() (*client.Client, context.Context, error) {
 			client.WithHost(dockerHost),
 			client.WithAPIVersionNegotiation())
 		ctx = context.Background()
+		log.Infof("Create docker client success, client: %p", &cli)
 	})
 	if err != nil {
 		log.Error("create docker client failure")
 		return nil, nil, err
 	}
-	log.Info("create docker client success")
+	log.Infof("Get docker client success, client: %p", &cli)
 	return cli, ctx, nil
 }

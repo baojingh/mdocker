@@ -19,7 +19,7 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 	for val := range statsChan {
 		statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 		statsStr := string(statsJSONBytes)
-		log.Info(statsStr)
+		// log.Info(statsStr)
 		tags := map[string]string{
 			"tagname1": "tagvalue1",
 		}

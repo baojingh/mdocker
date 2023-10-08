@@ -12,8 +12,8 @@ import (
 	logger "mdocker/logger"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
-	"time"
 
 	"github.com/docker/docker/api/types"
 )
@@ -22,10 +22,13 @@ var log = logger.New()
 
 func main() {
 
+	wg := &sync.WaitGroup{}
+	shutdownChan := make(chan int, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
 	go func() {
 		sig := <-sigChan
+		shutdownChan <- 1
 		log.Warnf("Receive signal %s and exit", sig)
 		os.Exit(0)
 	}()
@@ -35,8 +38,10 @@ func main() {
 		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
 		statsChan := make(chan types.StatsJSON)
 		go handler.StatsProducer(ele.Id, statsChan)
+		wg.Add(1)
 		go handler.DbConsumer(statsChan)
+		wg.Add(1)
 	}
-	time.Sleep(10 * time.Second)
 	log.Info("mdocker service starts success")
+	wg.Wait()
 }
