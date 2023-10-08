@@ -36,8 +36,7 @@ func main() {
 		statsChan := make(chan types.StatsJSON)
 		go handler.StatsProducer(ele.Id, statsChan)
 		go handler.DbConsumer(statsChan)
-
 	}
-	time.Sleep(1 * time.Minute)
+	time.Sleep(10 * time.Second)
 	log.Info("mdocker service starts success")
 }

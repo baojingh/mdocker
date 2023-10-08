@@ -54,11 +54,44 @@ curl -H "Content-Type: application/json" -X POST -d '{"username": "hadoop", "pas
 
 
 # Install Influxdb
-```
+### Install
+```bash
 docker pull influxdb:2.7.1
+mkdir -p  /data/dockerImages/influxdb/{data,config,log}
 
+cat > /data/dockerImages/influxdb/docker-compose.yaml << "EOF"
+version: '2'
+services:
+  influxdb:
+    image: influxdb:2.7.1
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: "setup"
+      DOCKER_INFLUXDB_INIT_USERNAME: "hadoop"
+      DOCKER_INFLUXDB_INIT_PASSWORD: "Hadoop.123" 
+      DOCKER_INFLUXDB_INIT_ORG: "mdocker"
+      DOCKER_INFLUXDB_INIT_BUCKET: "mdocker-bucket"
+    volumes:
+      - /data/dockerImages/influxdb/data:/var/lib/influxdb2
+      - /data/dockerImages/influxdb/config:/etc/influxdb2
+EOF
 
+docker-compose  up -d
 ```
+
+### Config
+```
+nXom-eG4c_SwYgoDsxFOrfz_hIg0_je6tSDTkC9MssBxl5F0eyVzSEIOazx_89513o4Y5Ld2NOwsllCK41L3xg==
+```
+
+# Development
+1. add go package
+go get github.com/influxdata/influxdb-client-go/v2
+
+
+
 
 
 
