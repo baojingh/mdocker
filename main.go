@@ -42,16 +42,18 @@ func main() {
 	for _, ele := range containerList {
 		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
 		statsChan := make(chan types.StatsJSON)
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			handler.StatsProducer(ele.Id, statsChan, shutdownChan)
 		}()
+
+		wg.Add(1)
 		go func() {
 			defer wg.Done()
 			handler.DbConsumer(statsChan, shutdownChan)
 
 		}()
-		wg.Add(2)
 	}
 	wg.Wait()
 	log.Info("mdocker service shutdown success")
