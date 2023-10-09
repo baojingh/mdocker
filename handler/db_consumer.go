@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -15,22 +16,24 @@ const (
 	bucket = "mdocker-bucket"
 )
 
-func DbConsumer(statsChan chan types.StatsJSON, shutdownChan chan int) {
+func DbConsumer(statsChan chan types.StatsJSON,
+	shutdownChan chan int,
+	wg *sync.WaitGroup) {
+
+	defer wg.Done()
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
 	for {
 		select {
-		case <-shutdownChan:
-			log.Info("Consumer receive shutdown signal and consumer return")
-			return
 		case val, ok := <-statsChan:
 			if !ok {
-				log.Error("There is no real data in channel, exit consumer")
+				log.Warn("Produer stop producing container stat metrics")
 				return
 			} else {
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 				writeData2DB(ctx, writeAPI, statsJSONBytes)
 			}
+		default:
 		}
 	}
 }
@@ -47,7 +50,7 @@ func writeData2DB(ctx context.Context, writeAPI api.WriteAPIBlocking, statsJSONB
 	if err := writeAPI.WritePoint(ctx, point); err != nil {
 		log.Fatal(err)
 	}
-	log.Info("Data is save success")
+	// log.Info("Data is save success")
 	// DbDataView()
 }
 

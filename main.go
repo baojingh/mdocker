@@ -30,8 +30,8 @@ func main() {
 	go func() {
 		sig := <-sigChan
 		shutdownChan <- 1
-		log.Warnf("Receive signal %s and exit", sig)
-		os.Exit(0)
+		log.Warnf("Receive signal %s and preapre for exit", sig)
+		// os.Exit(0)
 	}()
 
 	containerList := handler.ContainerList()
@@ -39,8 +39,7 @@ func main() {
 		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
 		statsChan := make(chan types.StatsJSON)
 		go handler.StatsProducer(ele.Id, statsChan, shutdownChan)
-		wg.Add(1)
-		go handler.DbConsumer(statsChan, shutdownChan)
+		go handler.DbConsumer(statsChan, shutdownChan, wg)
 		wg.Add(1)
 	}
 	log.Info("mdocker service starts success")
