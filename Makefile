@@ -11,6 +11,13 @@ run:
 build:
 	go build  -o mdocker main.go
 
+term:
+	sudo kill -TERM  $(ps -ef | grep mdocker | grep -v "grep" | awk '{print $2}')
+
+kill:
+	sudo kill -9     $(ps -ef | grep mdocker | grep -v "grep" | awk '{print $2}')
+
+
 clean:
 	rm -rf mdocker
 

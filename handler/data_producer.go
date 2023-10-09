@@ -14,7 +14,9 @@ import (
   @Description:
 */
 
-func StatsProducer(containerId string, statsChan chan types.StatsJSON, shutdownChan chan int) {
+func StatsProducer(containerId string, statsChan chan types.StatsJSON,
+	shutdownChan chan int) {
+
 	_, reader, err := container.ContainerStats(containerId)
 	if err != nil {
 		log.Error("fail to get the container stats reader, ", err)
@@ -37,10 +39,10 @@ func StatsProducer(containerId string, statsChan chan types.StatsJSON, shutdownC
 			return
 		default:
 			if err := decoder.Decode(&statsValue); err == io.EOF {
-				log.Warn("Receive EOF flag and exit")
+				log.Warn("Producer receive EOF flag and exit")
 				return
 			} else if err != nil {
-				log.Error("Something Error occured", err)
+				log.Error("Something Error occured to producer", err)
 				return
 			} else {
 				statsChan <- statsValue

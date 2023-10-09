@@ -3,12 +3,9 @@ package handler
 import (
 	"context"
 	"encoding/json"
-	"sync"
-	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/influxdata/influxdb-client-go/v2/api"
-	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
 const (
@@ -17,17 +14,15 @@ const (
 )
 
 func DbConsumer(statsChan chan types.StatsJSON,
-	shutdownChan chan int,
-	wg *sync.WaitGroup) {
+	shutdownChan chan int) {
 
-	defer wg.Done()
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
 	for {
 		select {
 		case val, ok := <-statsChan:
 			if !ok {
-				log.Warn("Produer stop producing container stat metrics")
+				log.Warn("Consumer stop consumming container stat metrics")
 				return
 			} else {
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
@@ -39,17 +34,17 @@ func DbConsumer(statsChan chan types.StatsJSON,
 }
 
 func writeData2DB(ctx context.Context, writeAPI api.WriteAPIBlocking, statsJSONBytes []byte) {
-	statsStr := string(statsJSONBytes)
-	tags := map[string]string{
-		"tagname1": "tagvalue1",
-	}
-	fields := map[string]interface{}{
-		"field1": statsStr,
-	}
-	point := write.NewPoint("measurement1", tags, fields, time.Now())
-	if err := writeAPI.WritePoint(ctx, point); err != nil {
-		log.Fatal(err)
-	}
+	// statsStr := string(statsJSONBytes)
+	// tags := map[string]string{
+	// 	"tagname1": "tagvalue1",
+	// }
+	// fields := map[string]interface{}{
+	// 	"field1": statsStr,
+	// }
+	// point := write.NewPoint("measurement1", tags, fields, time.Now())
+	// if err := writeAPI.WritePoint(ctx, point); err != nil {
+	// 	log.Fatal(err)
+	// }
 	// log.Info("Data is save success")
 	// DbDataView()
 }
