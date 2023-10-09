@@ -14,16 +14,12 @@ import (
   @Description:
 */
 
-func StatsProducer(containerId string, statsChan chan types.StatsJSON) {
-	ctx, reader, err := container.ContainerStats(containerId)
+func StatsProducer(containerId string, statsChan chan types.StatsJSON, shutdownChan chan int) {
+	_, reader, err := container.ContainerStats(containerId)
 	if err != nil {
 		log.Error("fail to get the container stats reader, ", err)
 		return
 	}
-	defer func() {
-		log.Info("stats reader is closed")
-		reader.Close()
-	}()
 
 	decoder := json.NewDecoder(reader)
 	var statsValue types.StatsJSON
@@ -33,9 +29,11 @@ func StatsProducer(containerId string, statsChan chan types.StatsJSON) {
 		// 当有多个通道同时可用时，select 会随机选择一个可用的通道进行操作。
 		// 当所有的通道都阻塞时，select 可以执行默认的 default 分支，实现非阻塞的操作。
 		select {
-		case <-ctx.Done():
+		case <-shutdownChan:
 			reader.Close()
-			log.Warn("Stop logging container stat metrics")
+			// producer should close the channel nor consumer
+			close(statsChan)
+			log.Warn("Produer stop producing container stat metrics")
 			return
 		default:
 			if err := decoder.Decode(&statsValue); err == io.EOF {

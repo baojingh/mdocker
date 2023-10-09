@@ -21,6 +21,6 @@ func GetInfluxdbClient() (influxdb2.Client, context.Context) {
 		ctx = context.Background()
 		log.Infof("influxdb client is initialized success, client: %p", &client)
 	})
-	log.Infof("Get influxdb client success, %p", &client)
+	log.Infof("Get influxdb client success, client: %p", &client)
 	return client, ctx
 }

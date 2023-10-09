@@ -1,10 +1,12 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/influxdata/influxdb-client-go/v2/api"
 	"github.com/influxdata/influxdb-client-go/v2/api/write"
 )
 
@@ -13,27 +15,63 @@ const (
 	bucket = "mdocker-bucket"
 )
 
-func DbConsumer(statsChan chan types.StatsJSON) {
+func DbConsumer(statsChan chan types.StatsJSON, shutdownChan chan int) {
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
-	for val := range statsChan {
-		statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
-		statsStr := string(statsJSONBytes)
-		// log.Info(statsStr)
-		tags := map[string]string{
-			"tagname1": "tagvalue1",
+	for {
+		select {
+		case <-shutdownChan:
+			log.Info("Consumer receive shutdown signal and consumer return")
+			return
+		case val, ok := <-statsChan:
+			if !ok {
+				log.Error("There is no real data in channel, exit consumer")
+				return
+			} else {
+				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
+				writeData2DB(ctx, writeAPI, statsJSONBytes)
+			}
 		}
-		fields := map[string]interface{}{
-			"field1": statsStr,
-		}
-		point := write.NewPoint("measurement1", tags, fields, time.Now())
-		if err := writeAPI.WritePoint(ctx, point); err != nil {
-			log.Fatal(err)
-		}
-		log.Info("Data is save success")
-		// DbDataView()
 	}
 }
+
+func writeData2DB(ctx context.Context, writeAPI api.WriteAPIBlocking, statsJSONBytes []byte) {
+	statsStr := string(statsJSONBytes)
+	tags := map[string]string{
+		"tagname1": "tagvalue1",
+	}
+	fields := map[string]interface{}{
+		"field1": statsStr,
+	}
+	point := write.NewPoint("measurement1", tags, fields, time.Now())
+	if err := writeAPI.WritePoint(ctx, point); err != nil {
+		log.Fatal(err)
+	}
+	log.Info("Data is save success")
+	// DbDataView()
+}
+
+// func DbConsumer(statsChan chan types.StatsJSON) {
+// 	cli, ctx := GetInfluxdbClient()
+// 	writeAPI := cli.WriteAPIBlocking(org, bucket)
+// 	for val := range statsChan {
+// 		statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
+// 		statsStr := string(statsJSONBytes)
+// 		// log.Info(statsStr)
+// 		tags := map[string]string{
+// 			"tagname1": "tagvalue1",
+// 		}
+// 		fields := map[string]interface{}{
+// 			"field1": statsStr,
+// 		}
+// 		point := write.NewPoint("measurement1", tags, fields, time.Now())
+// 		if err := writeAPI.WritePoint(ctx, point); err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		log.Info("Data is save success")
+// 		// DbDataView()
+// 	}
+// }
 
 func DbDataView() {
 	client, ctx := GetInfluxdbClient()

@@ -24,6 +24,7 @@ func main() {
 
 	wg := &sync.WaitGroup{}
 	shutdownChan := make(chan int, 1)
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
 	go func() {
@@ -37,9 +38,9 @@ func main() {
 	for _, ele := range containerList {
 		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
 		statsChan := make(chan types.StatsJSON)
-		go handler.StatsProducer(ele.Id, statsChan)
+		go handler.StatsProducer(ele.Id, statsChan, shutdownChan)
 		wg.Add(1)
-		go handler.DbConsumer(statsChan)
+		go handler.DbConsumer(statsChan, shutdownChan)
 		wg.Add(1)
 	}
 	log.Info("mdocker service starts success")
