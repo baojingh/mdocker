@@ -48,6 +48,7 @@ func StatsProducer(statsChan chan types.StatsJSON, shutdownChan chan int) {
 		// 当所有的通道都阻塞时，select 可以执行默认的 default 分支，实现非阻塞的操作。
 		select {
 		case <-shutdownChan:
+			// close the readers, there maybe multi readers.
 			// reader.Close()
 			// producer should close the channel nor consumer
 			close(statsChan)
