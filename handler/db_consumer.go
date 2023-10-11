@@ -13,8 +13,7 @@ const (
 	bucket = "mdocker-bucket"
 )
 
-func DbConsumer(statsChan chan types.StatsJSON,
-	shutdownChan chan int) {
+func DbConsumer(statsChan chan types.StatsJSON) {
 
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
@@ -45,7 +44,7 @@ func writeData2DB(ctx context.Context, writeAPI api.WriteAPIBlocking, statsJSONB
 	// if err := writeAPI.WritePoint(ctx, point); err != nil {
 	// 	log.Fatal(err)
 	// }
-	// log.Info("Data is save success")
+	log.Info("Data is save success")
 	// DbDataView()
 }
 

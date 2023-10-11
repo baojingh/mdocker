@@ -24,37 +24,30 @@ func main() {
 	log.Info("mdocker service starts to work.")
 
 	wg := &sync.WaitGroup{}
-	shutdownChan := make(chan int, 1)
-	containerList := handler.ContainerList()
 
+	shutdownChan := make(chan int, 1)
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
 	go func() {
 		sig := <-sigChan
-
-		// value count in channnel must corespond to the number of goroutine
-		for i := 0; i < len(containerList); i++ {
-			shutdownChan <- 1
-		}
+		shutdownChan <- 1
 		log.Warnf("Receive signal %s and preapre for exit", sig)
 	}()
 
-	for _, ele := range containerList {
-		log.Infof("id: %s, name: %s", ele.Id, ele.Name)
-		statsChan := make(chan types.StatsJSON)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			handler.StatsProducer(ele.Id, statsChan, shutdownChan)
-		}()
+	statsChan := make(chan types.StatsJSON)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		handler.StatsProducer(statsChan, shutdownChan)
+	}()
 
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			handler.DbConsumer(statsChan, shutdownChan)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		handler.DbConsumer(statsChan)
 
-		}()
-	}
+	}()
+
 	wg.Wait()
 	log.Info("mdocker service shutdown success")
 
