@@ -14,9 +14,7 @@ import (
   @Description:
 */
 
-func StatsProducer(statsChan chan types.StatsJSON,
-	shutdownChan chan int) {
-
+func StatsProducer(statsChan chan types.StatsJSON, shutdownChan chan int) {
 	containerList := ContainerList()
 	readerArr := []io.ReadCloser{}
 
