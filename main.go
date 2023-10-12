@@ -45,7 +45,6 @@ func main() {
 	go func() {
 		defer wg.Done()
 		handler.DbConsumer(statsChan)
-
 	}()
 
 	wg.Wait()
