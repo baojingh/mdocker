@@ -24,6 +24,9 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 				log.Warn("Consumer stop consumming container stat metrics")
 				return
 			} else {
+				log.Infof("cpu: %v, mem: %v", val.CPUStats.CPUUsage.TotalUsage,
+					val.MemoryStats.Usage)
+
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 				writeData2DB(ctx, writeAPI, statsJSONBytes)
 			}
@@ -44,7 +47,7 @@ func writeData2DB(ctx context.Context, writeAPI api.WriteAPIBlocking, statsJSONB
 	// if err := writeAPI.WritePoint(ctx, point); err != nil {
 	// 	log.Fatal(err)
 	// }
-	log.Info("Data is save success")
+	// log.Info("Data is save success")
 	// DbDataView()
 }
 

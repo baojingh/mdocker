@@ -127,7 +127,11 @@ from(bucket:"mdocker-bucket")
 
 Ctrl + D will execute and display the data.
 
+# Uusal CMD
+```
+sudo kill -TERM  $(ps -ef | grep mdocker | grep -v "grep" | awk '{print $2}')
 
+```
 
 
 
