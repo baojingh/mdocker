@@ -34,3 +34,4 @@ profiles_settings.xml
 
 # the binary executible file mdocker
 mdocker
+.pprof

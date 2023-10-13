@@ -133,13 +133,84 @@ sudo kill -TERM  $(ps -ef | grep mdocker | grep -v "grep" | awk '{print $2}')
 
 ```
 
+# Ubuntu install Graphviz
+for pprof visual
+```
+apt-get install -y graphviz
+```
+# prof analyzer
+### Solution1
+```go
+import "runtime/pprof" 
+
+func monitorMem() {
+	f, err := os.Create("cpu.pprof")
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	defer f.Close() // error handling omitted for example
+	runtime.GC()    // get up-to-date statistics
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+}
+```
+go tool pprof -http 127.0.0.1:8848 ./cpu.pprof  
+go tool pprof cpu.pprof
+
+### Solution2
+```go
+	"net/http"
+	_ "net/http/pprof"
+
+  go func() {
+		http.HandleFunc("/test", Test)
+		http.ListenAndServe(":9988", nil)
+	}()
+```
+go tool pprof -http=":8080" http://localhost:9988/debug/pprof/profile?seconds=10
+
+go tool pprof http://localhost:9988/debug/pprof/profile?seconds=10
+
+visit 
+http://localhost:9988/debug/pprof/
 
 
+```
+allocs: A sampling of all past memory allocations
+block: Stack traces that led to blocking on synchronization primitives
+cmdline: The command line invocation of the current program
+goroutine: Stack traces of all current goroutines
+heap: A sampling of memory allocations of live objects. You can specify the gc GET parameter to run GC before taking the heap sample.
+mutex: Stack traces of holders of contended mutexes
+profile: CPU profile. You can specify the duration in the seconds GET parameter. After you get the profile file, use the go tool pprof command to investigate the profile.
+threadcreate: Stack traces that led to the creation of new OS threads
+trace: A trace of execution of the current program. You can specify the duration in the seconds GET parameter. After you get the trace file, use the go tool trace command to investigate the trace.
+```
 
 
+```
+# web方式查看 cpu 30秒内的占用情况
+go tool pprof -http=":8080" https://xxx.com/debug/pprof/profile?seconds=30
+
+# web方式查看 memory 30秒内占用情况
+go tool pprof -http=":8080" https://xxx.com/debug/pprof/heap?seconds=30
+
+# web方式查看 goroutine 30秒内的占用情况
+go tool pprof -http=":8080" https://xxx.com/debug/pprof/goroutine?seconds=30
+
+# 查看火焰图
+http://localhost:8080/ui/flamegraph
+```
 
 
-
+# pprof Usage
+### CPU
+flat 	当前函数占用 cpu 耗时
+flat % 	当前函数占用 cpu 耗时百分比
+sum% 	函数占用 cpu 时间累积占比，从小到大一直累积到 100%
+cum 	当前函数加上调用当前函数的函数占用 cpu 的总耗时
+%cum 	当前函数加上调用当前函数的函数占用 cpu 的总耗时占比
 
 
 
