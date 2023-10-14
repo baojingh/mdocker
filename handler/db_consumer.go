@@ -24,9 +24,9 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 				log.Warn("Consumer stop consumming container stat metrics")
 				return
 			} else {
-				// log.Infof("cpu: %v, mem: %v",
-				// 	val.CPUStats.CPUUsage.TotalUsage,
-				// 	val.MemoryStats.Usage)
+				log.Infof("cpu: %v, mem: %v",
+					val.CPUStats.CPUUsage.TotalUsage,
+					val.MemoryStats.Usage)
 
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 				writeData2DB(ctx, writeAPI, statsJSONBytes)
