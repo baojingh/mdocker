@@ -11,7 +11,10 @@ import (
 	"mdocker/handler"
 	logger "mdocker/logger"
 	"net/http"
+
+	// part 1/2 for pprof monitoring
 	_ "net/http/pprof"
+
 	"os"
 	"os/signal"
 	"runtime"
@@ -25,14 +28,10 @@ import (
 
 var log = logger.New()
 
-func Test(w http.ResponseWriter, r *http.Request) {
-
-}
-
 func main() {
 
-	monitorMem()
-	monitorCPU()
+	// monitorMem()
+	// monitorCPU()
 
 	log.Info("mdocker service starts to work.")
 	wg := &sync.WaitGroup{}
@@ -58,14 +57,13 @@ func main() {
 		handler.DbConsumer(statsChan)
 	}()
 
+	// part 2/2, for program monitoring with pprof
 	go func() {
-		http.HandleFunc("/test", Test)
 		http.ListenAndServe(":9988", nil)
 	}()
 
 	wg.Wait()
 	log.Info("mdocker service shutdown success")
-
 }
 
 func monitorMem() {
@@ -78,7 +76,6 @@ func monitorMem() {
 	if err := pprof.WriteHeapProfile(f); err != nil {
 		log.Fatal("could not write memory profile: ", err)
 	}
-
 }
 
 func monitorCPU() {
@@ -92,5 +89,4 @@ func monitorCPU() {
 		log.Fatal("could not start CPU profile: ", err)
 	}
 	defer pprof.StopCPUProfile()
-
 }
