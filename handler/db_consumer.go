@@ -17,6 +17,15 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
+
+	// for val := range statsChan {
+	// 	log.Infof("cpu: %v, mem: %v",
+	// 		val.CPUStats.CPUUsage.TotalUsage,
+	// 		val.MemoryStats.Usage)
+	// 	statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
+	// 	writeData2DB(ctx, writeAPI, statsJSONBytes)
+	// }
+
 	for {
 		select {
 		case val, ok := <-statsChan:
@@ -24,14 +33,18 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 				log.Warn("Consumer stop consumming container stat metrics")
 				return
 			} else {
-				// log.Infof("cpu: %v, mem: %v",
-				// 	val.CPUStats.CPUUsage.TotalUsage,
-				// 	val.MemoryStats.Usage)
+				log.Infof("cpu: %v, mem: %v",
+					val.CPUStats.CPUUsage.TotalUsage,
+					val.MemoryStats.Usage)
 
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 				writeData2DB(ctx, writeAPI, statsJSONBytes)
 			}
-		default:
+			// default:
+
+			// default:
+			// 	time.Sleep(1 * time.Second)
+			// 	log.Info("no data, sleep")
 		}
 	}
 }
