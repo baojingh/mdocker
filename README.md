@@ -212,6 +212,26 @@ sum% 	函数占用 cpu 时间累积占比，从小到大一直累积到 100%
 cum 	当前函数加上调用当前函数的函数占用 cpu 的总耗时
 %cum 	当前函数加上调用当前函数的函数占用 cpu 的总耗时占比
 
+# Question
+```
+INFO[2023-10-17 14:57:00] cpu: 79274899733, mem: 1767460864            
+INFO[2023-10-17 14:57:00] cpu: 15140842510, mem: 245706752             
+INFO[2023-10-17 14:57:00] cpu: 129246754869, mem: 84307968             
+INFO[2023-10-17 14:57:00] cpu: 0, mem: 84307968                        
+INFO[2023-10-17 14:57:00] data in default                              
+
+INFO[2023-10-17 14:57:01] cpu: 18157504428, mem: 48021504              
+INFO[2023-10-17 14:57:01] data in default                              
+ERROR[2023-10-17 14:57:01] Something Error occured to producerinvalid character 'l' looking for beginning of value 
+
+
+INFO[2023-10-17 14:57:02] data in default                              
+INFO[2023-10-17 14:57:03] data in default                              
+INFO[2023-10-17 14:57:04] data in default                              
+make: *** [Makefile:9: run] Killed
+
+```
+
 
 
 

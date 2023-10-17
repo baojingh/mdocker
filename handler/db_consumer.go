@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/docker/docker/api/types"
 	"github.com/influxdata/influxdb-client-go/v2/api"
@@ -17,15 +18,6 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 
 	cli, ctx := GetInfluxdbClient()
 	writeAPI := cli.WriteAPIBlocking(org, bucket)
-
-	// for val := range statsChan {
-	// 	log.Infof("cpu: %v, mem: %v",
-	// 		val.CPUStats.CPUUsage.TotalUsage,
-	// 		val.MemoryStats.Usage)
-	// 	statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
-	// 	writeData2DB(ctx, writeAPI, statsJSONBytes)
-	// }
-
 	for {
 		select {
 		case val, ok := <-statsChan:
@@ -40,11 +32,9 @@ func DbConsumer(statsChan chan types.StatsJSON) {
 				statsJSONBytes, _ := json.MarshalIndent(val, "", "  ")
 				writeData2DB(ctx, writeAPI, statsJSONBytes)
 			}
-			// default:
-
-			// default:
-			// 	time.Sleep(1 * time.Second)
-			// 	log.Info("no data, sleep")
+		default:
+			log.Info("data in default")
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
