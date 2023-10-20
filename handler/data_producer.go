@@ -49,7 +49,7 @@ func StatsProducer(statsChan chan types.StatsJSON, shutdownChan chan int) {
 		select {
 		case <-shutdownChan:
 			// close the readers, there maybe multi readers.
-			// reader.Close()
+			closeIOReader(readerArr)
 			// producer should close the channel nor consumer
 			close(statsChan)
 			log.Warn("Produer stop producing container stat metrics")
@@ -57,6 +57,19 @@ func StatsProducer(statsChan chan types.StatsJSON, shutdownChan chan int) {
 		default:
 		}
 	}
+}
+
+// Close reader when program receive shutdown signal
+// Clean IO resource
+func closeIOReader(readerArr []io.ReadCloser) {
+	for _, reader := range readerArr {
+		if reader != nil {
+			reader.Close()
+		} else {
+			log.Error("Reader is closed failure.")
+		}
+	}
+	log.Warn("Reader is closed success.")
 }
 
 type ContainerSimple struct {
