@@ -8,58 +8,52 @@ package main
 */
 
 import (
-	"mdocker/handler"
-	logger "mdocker/logger"
-	"net/http"
-
-	// part 1/2 for pprof monitoring
-	_ "net/http/pprof"
-
-	"os"
-	"os/signal"
-
-	"sync"
-	"syscall"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"time"
 
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 )
 
-var log = logger.New()
-
 func main() {
+	containerId := "ecd673b5f6e0"
 
-	// monitorMem()
-	// monitorCPU()
+	ctx := context.Background()
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	if err != nil {
+		panic(err)
+	}
+	defer cli.Close()
 
-	log.Info("mdocker service starts to work.")
-	wg := &sync.WaitGroup{}
-	shutdownChan := make(chan int, 1)
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM, os.Kill)
-	go func() {
-		sig := <-sigChan
-		shutdownChan <- 1
-		log.Warnf("Receive signal %s and preapre for exit", sig)
-	}()
+	readerArr := []io.ReadCloser{}
+	stats, err := cli.ContainerStats(ctx, containerId, true)
+	readerArr = append(readerArr, stats.Body)
+	for {
+		for _, rr := range readerArr {
+			decoder := json.NewDecoder(rr)
+			var statsValue types.StatsJSON
+			if err := decoder.Decode(&statsValue); err == io.EOF {
+				fmt.Println("Producer receive EOF flag and exit")
+				return
+			} else if err != nil {
+				fmt.Println("Something Error occured to producer", err)
+				return
+			} else {
+				// fmt.Printf("cpu: %v, mem: %v",
+				// 	statsValue.CPUStats.CPUUsage.TotalUsage,
+				// 	statsValue.MemoryStats.Usage)
 
-	statsChan := make(chan types.StatsJSON)
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		handler.StatsProducer(statsChan, shutdownChan)
-	}()
+				statsJSONBytes, _ := json.MarshalIndent(statsValue, "", "  ")
+				statsStr := string(statsJSONBytes)
+				fmt.Println(statsStr)
+			}
+		}
+		time.Sleep(time.Second * 1)
+		fmt.Println()
+		fmt.Println()
+	}
 
-	wg.Add(1)
-	go func() {
-		defer wg.Done()
-		handler.DbConsumer(statsChan)
-	}()
-
-	// part 2/2, for program monitoring with pprof
-	go func() {
-		http.ListenAndServe(":9988", nil)
-	}()
-
-	wg.Wait()
-	log.Info("mdocker service shutdown success")
 }

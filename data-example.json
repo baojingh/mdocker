@@ -1,0 +1,112 @@
+{
+  "read": "2024-01-19T07:11:26.50858431Z",
+  "preread": "2024-01-19T07:11:25.504554319Z",
+  "pids_stats": {
+    "current": 250,
+    "limit": 18429
+  },
+  "blkio_stats": {
+    "io_service_bytes_recursive": [
+      {
+        "major": 252,
+        "minor": 0,
+        "op": "read",
+        "value": 395980800
+      },
+      {
+        "major": 252,
+        "minor": 0,
+        "op": "write",
+        "value": 1205526528
+      }
+    ],
+    "io_serviced_recursive": null,
+    "io_queue_recursive": null,
+    "io_service_time_recursive": null,
+    "io_wait_time_recursive": null,
+    "io_merged_recursive": null,
+    "io_time_recursive": null,
+    "sectors_recursive": null
+  },
+  "num_procs": 0,
+  "storage_stats": {},
+  "cpu_stats": {
+    "cpu_usage": {
+      "total_usage": 3303807787000,
+      "usage_in_kernelmode": 1045763541000,
+      "usage_in_usermode": 2258044245000
+    },
+    "system_cpu_usage": 4169611130000000,
+    "online_cpus": 8,
+    "throttling_data": {
+      "periods": 0,
+      "throttled_periods": 0,
+      "throttled_time": 0
+    }
+  },
+  "precpu_stats": {
+    "cpu_usage": {
+      "total_usage": 3303802711000,
+      "usage_in_kernelmode": 1045759421000,
+      "usage_in_usermode": 2258043290000
+    },
+    "system_cpu_usage": 4169603160000000,
+    "online_cpus": 8,
+    "throttling_data": {
+      "periods": 0,
+      "throttled_periods": 0,
+      "throttled_time": 0
+    }
+  },
+  "memory_stats": {
+    "usage": 2850701312,
+    "stats": {
+      "active_anon": 16384,
+      "active_file": 113545216,
+      "anon": 2604122112,
+      "anon_thp": 0,
+      "file": 227954688,
+      "file_dirty": 40960,
+      "file_mapped": 22392832,
+      "file_writeback": 0,
+      "inactive_anon": 2604105728,
+      "inactive_file": 114409472,
+      "kernel_stack": 4096000,
+      "pgactivate": 59448,
+      "pgdeactivate": 33563,
+      "pgfault": 1594205,
+      "pglazyfree": 0,
+      "pglazyfreed": 0,
+      "pgmajfault": 2117,
+      "pgrefill": 56702,
+      "pgscan": 144596,
+      "pgsteal": 114580,
+      "shmem": 0,
+      "slab": 6573712,
+      "slab_reclaimable": 3098760,
+      "slab_unreclaimable": 3474952,
+      "sock": 0,
+      "thp_collapse_alloc": 0,
+      "thp_fault_alloc": 0,
+      "unevictable": 0,
+      "workingset_activate": 0,
+      "workingset_nodereclaim": 0,
+      "workingset_refault": 0
+    },
+    "limit": 16228339712
+  },
+  "name": "/sonarqube",
+  "id": "ecd673b5f6e0081a70bafe72473db90019d7998f41646c92c5116a997e32d114",
+  "networks": {
+    "eth0": {
+      "rx_bytes": 637992138,
+      "rx_packets": 3918285,
+      "rx_errors": 0,
+      "rx_dropped": 0,
+      "tx_bytes": 1363054990,
+      "tx_packets": 5133682,
+      "tx_errors": 0,
+      "tx_dropped": 0
+    }
+  }
+}
